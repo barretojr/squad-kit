@@ -18,6 +18,8 @@ During planning, inspect the existing frontend and define a browser review matri
 
 Review the agreed desktop and mobile viewports (default 1440x900 and 390x844), plus one intermediate width when responsive layout changes. Inspect actual rendered hierarchy, spacing, typography, imagery/assets, focus and keyboard behavior, loading/empty/error/success states, horizontal overflow, browser console and first-party network requests. Compare against `.squad/design/DESIGN.md`; avoid taste-only redesign requests. Report concrete element, viewport, observed result, expected rule and severity. Save screenshots/snapshots under `.squad/evidencias/frontend/` when feasible, and link them in the report. Do not fulfill first-party API routes with mocks; report actual requests and status, coordinating functional defects with QA/Frontend.
 
+When available, also run: an automated accessibility scan (axe-core via Playwright, e.g. `@axe-core/playwright`) on each main screen, reporting violations by impact; a Lighthouse run on the main page (`npx lighthouse <url> --preset=desktop` and mobile default) recording Performance, Accessibility, Best Practices and SEO scores; and `audit_frontend_taste` for generic AI copy and off-token styling. If a tool is not installed, record "não executado: <motivo>" instead of estimating scores. Treat serious/critical a11y violations and console errors as blocking.
+
 ## Report
 
 `.squad/frontend/revisao-visual.md`: context/evidence, work required, plan/dependencies, done, validation/evidence, pending.

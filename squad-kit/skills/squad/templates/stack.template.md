@@ -20,7 +20,21 @@
 | Autenticação | [Identity-JWT / Supabase Auth / social / sem login] | |
 | Migrations | [EF Core / Prisma / Alembic / Supabase CLI] | |
 | Testes | [básico / completo] e ferramentas | |
-| Deploy / ambiente | [local Docker / nuvem X] | |
+| Deploy / ambiente | [Vercel + Supabase cloud / local Docker / nuvem X] | |
+| Jobs em segundo plano | [nenhum / Vercel Cron / pg_cron / Edge Function agendada / worker] e frequência | |
+| Perfil de `stacks.md` | [A–G] e o sinal que levou à escolha | |
+
+## Descoberta (resumo)
+
+- Produtos equivalentes: [nomes, link para `.squad/produto/descoberta.md`]
+- Decisões construir × integrar: [capacidade → decisão]
+- Riscos aceitos pelo usuário: [ex.: integração não oficial, custo por uso]
+
+## Deploy (se aplicável)
+
+- Vercel: projeto [existe/criar] · deploy de preview autorizado: [sim/não] · produção: [usuário aprova] · domínio: [...]
+- Supabase: projetos [dev/preview] e [produção] separados: [sim/não] · `db push` em produção autorizado: [sim/não]
+- Variáveis de ambiente por ambiente: [lista de nomes, sem valores]
 
 ## Supabase (se aplicável)
 

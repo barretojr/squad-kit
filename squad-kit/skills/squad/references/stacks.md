@@ -1,6 +1,30 @@
 # Perfis de stack
 
-Use o perfil escolhido na entrevista. Em brownfield, o perfil é o que o projeto já usa. Os comandos abaixo são os que `run_checks` tenta detectar; confirme no projeto antes de depender deles.
+Use o perfil escolhido na entrevista. Em brownfield, o perfil é o que o projeto já usa. Os comandos abaixo são os que `run_checks` tenta detectar; confirme no projeto antes de depender deles. Para traduzir as exigências dos agentes (escritas com exemplos .NET) para outra stack, use `references/stack-translation.md`.
+
+## Qual perfil recomendar quando o usuário diz "decida você"
+
+| Sinal no pedido ou na conversa | Perfil recomendado |
+|---|---|
+| Cita Vercel, Supabase, "subir rápido", SaaS/web app sem preferência de linguagem | **G** (Next.js + Supabase no Vercel) |
+| Só frontend + dados simples por usuário, sem integração com segredo | **C** (React + Supabase) |
+| Prefere .NET / equipe .NET / integração corporativa Windows | **A** ou **B** |
+| Prefere Python ou o núcleo é dados/ML | **E** |
+| Prefere Node e quer backend separado de longa duração (filas, WebSocket próprio) | **D** |
+| Protótipo descartável local | **F** |
+
+Registre em `.squad/stack.md` o sinal que levou à escolha.
+
+## G. Next.js (App Router) + Supabase, deploy no Vercel (recomendado para web app/SaaS sem preferência)
+
+- Estrutura: `app/` (rotas, Server Components, Route Handlers em `app/api/**/route.ts`, Server Actions), `lib/supabase/` (clientes **server** e **browser** separados, via `@supabase/ssr`), `supabase/` (migrations, `seed.sql`, `config.toml`, Edge Functions), `tests/`.
+- Dados: Postgres do Supabase; schema versionado com `supabase migration new` e `supabase db push`; tipos com `supabase gen types typescript --local > lib/database.types.ts`. RLS habilitado em **toda** tabela de `public`.
+- Auth: Supabase Auth com cookies via `@supabase/ssr`; `middleware.ts` renova a sessão; toda mutação valida usuário no servidor (`getUser()`, não só `getSession()`) **e** é protegida por RLS.
+- Segredos: `NEXT_PUBLIC_SUPABASE_URL` e a chave `anon`/publishable podem ir ao cliente; `SUPABASE_SERVICE_ROLE_KEY`/secret key e chaves de terceiros só no servidor (Route Handlers, Server Actions, Edge Functions), nunca com prefixo `NEXT_PUBLIC_`.
+- Jobs: Vercel Cron chamando Route Handler protegido por segredo (`CRON_SECRET`) **ou** `pg_cron`/Edge Function agendada no Supabase; confira os limites do plano na doc oficial. Ver `references/integrations.md`.
+- Build/test: `npm ci`, `npm run lint`, `npx tsc --noEmit` (ou script `typecheck`), `npm run build`, `npm test` (Vitest). Integração: `supabase start` + testes contra o Supabase local com **dois usuários** (BOLA/RLS); `supabase test db` para policies em pgTAP. E2E: Playwright contra `npm run build && npm start`.
+- Deploy: `vercel link`, variáveis por ambiente (`vercel env add`), deploy de preview (`vercel deploy`) e produção (`vercel deploy --prod`) **somente com autorização explícita do usuário** (é ação externa). Migrations em produção: `supabase link` + `supabase db push`, também com autorização. Smoke test com Playwright na URL de preview.
+- Observabilidade mínima: logs das funções no Vercel, `error.tsx`/`global-error.tsx`, página de status/última execução dos jobs para o admin.
 
 ## A. .NET + React + PostgreSQL (recomendado se o usuário prefere .NET)
 

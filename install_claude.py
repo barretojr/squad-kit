@@ -26,24 +26,43 @@ DROP_KEYS = ("subagent:", "mainAgent:", "inheritCustomizations:", "commandExecut
 PREFIX = "[squad] Use SOMENTE quando a skill squad chamar este agente pelo nome. "
 
 
-def convert_agent(text: str) -> str:
-    text = text.lstrip("\ufeff")
+def convert_agent(text: str, installed_skills: set[str] | None = None) -> str:
+    """Converte o frontmatter do Antigravity para o Claude Code.
+
+    O Claude Code n\u00e3o entende a chave `skills:` dos agentes; em vez de descart\u00e1-la, ela vira
+    uma instru\u00e7\u00e3o no corpo apontando para o SKILL.md instalado de cada skill.
+    """
+    text = text.lstrip("\ufeff").replace("\r\n", "\n")
     if not text.startswith("---"):
         return text
     head, sep, body = text[3:].partition("\n---")
-    out, skipping_list = [], False
+    out, skills, in_skills = [], [], False
     for line in head.splitlines():
-        if skipping_list and (line.startswith(" ") or line.startswith("-")):
+        if in_skills and (line.startswith(" ") or line.startswith("-")):
+            item = line.strip().lstrip("-").strip().strip("\"'")
+            if item:
+                skills.append(Path(item).name)
             continue
-        skipping_list = False
+        in_skills = False
         if line.startswith("skills:"):
-            skipping_list = True
+            in_skills = True
             continue
         if line.startswith(DROP_KEYS):
             continue
         if line.startswith("description:"):
             line = "description: " + _yaml_quote(PREFIX + line[len("description:"):].strip())
         out.append(line)
+    if skills:
+        available = [s for s in skills if installed_skills is None or s in installed_skills]
+        missing = [s for s in skills if s not in available]
+        note = "\n\n> **Skills deste agente:** antes de agir, leia " + ", ".join(
+            f"`.claude/skills/{s}/SKILL.md`" for s in available) + " (procure em `~/.claude/skills/` se n\u00e3o estiver no projeto)."
+        if missing:
+            note += f" N\u00e3o instaladas nesta m\u00e1quina (instale com `--with-heavy-skills` se precisar): {', '.join(missing)}."
+        if not available:
+            note = f"\n\n> **Skills deste agente n\u00e3o instaladas:** {', '.join(missing)} (use `--with-heavy-skills`)."
+        body = body.split("\n", 1)
+        body = body[0] + note + "\n\n" + (body[1] if len(body) > 1 else "").lstrip("\n")
     return "---" + "\n".join(out) + "\n---" + body
 
 
@@ -86,7 +105,8 @@ def main() -> int:
 
     (base / "agents").mkdir(parents=True, exist_ok=True)
     for agent in sorted((SRC / "agents").glob("*.md")):
-        (base / "agents" / agent.name).write_text(convert_agent(agent.read_text(encoding="utf-8")), encoding="utf-8", newline="\n")
+        converted = convert_agent(agent.read_text(encoding="utf-8"), set(skills))
+        (base / "agents" / agent.name).write_text(converted, encoding="utf-8", newline="\n")
 
     (base / "mcp").mkdir(parents=True, exist_ok=True)
     shutil.copyfile(SRC / "mcp" / "server.py", base / "mcp" / "server.py")

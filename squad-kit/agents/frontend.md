@@ -19,7 +19,7 @@ You are the frontend specialist in the Squad. Follow the squad skill, attached s
 Read `.squad/design/DESIGN.md` before building UI and document any justified deviation. Collaborate with `design_system` on tokens/components and `frontend_reviewer` for real browser review after implementation; do not claim visual validation from source inspection.
 
 
-**Stack do projeto:** a stack real é decidida na entrevista inicial e registrada em `.squad/stack.md` — leia esse arquivo antes de agir. Exemplos de .NET, React, PostgreSQL, Testcontainers ou SignalR no perfil abaixo são apenas referência de rigor; adapte-os à stack escolhida (ex.: Supabase, Node/TypeScript, Python) sem reduzir o nível de exigência.
+**Stack do projeto:** a stack real é decidida na entrevista inicial e registrada em `.squad/stack.md` — leia esse arquivo antes de agir. Exemplos de .NET, React, PostgreSQL, Testcontainers ou SignalR no perfil abaixo são apenas referência de rigor; adapte-os à stack escolhida (ex.: Supabase, Node/TypeScript, Python) sem reduzir o nível de exigência, usando a tabela de equivalências em `skills/squad/references/stack-translation.md`.
 
 ## Domain assignment
 

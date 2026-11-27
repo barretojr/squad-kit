@@ -140,7 +140,23 @@ FINALIZER_CHECKS = [
     "Testes unit\u00e1rios",
     "Testes de integra\u00e7\u00e3o",
     "Fluxos principais no browser",
+    "Autorização no servidor ou RLS testada com dois usuários",
 ]
+# Marcadores que indicam checagem de autenticação/autorização no servidor (heurística).
+SERVER_AUTH_MARKERS = re.compile(
+    r"getUser\s*\(|auth\s*\(\s*\)|getServerSession|currentUser\s*\(|requireUser|requireAuth|withAuth|verifyToken|jwtVerify|"
+    r"verifySignature|constructEvent|x-hub-signature|stripe-signature|CRON_SECRET|timingSafeEqual|authorization['\"]?\s*\)|"
+    r"\[Authorize|Depends\(\s*get_current_user|@UseGuards|preHandler",
+    re.IGNORECASE)
+SECRET_VALUE_PATTERNS = [
+    ("Chave secreta Stripe", re.compile(r"\bsk_live_[0-9A-Za-z]{10,}")),
+    ("Chave secreta Supabase", re.compile(r"\bsb_secret_[0-9A-Za-z_-]{10,}")),
+    ("Chave de acesso AWS", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
+    ("Token GitHub", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{30,}")),
+    ("Token Slack", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}")),
+    ("Chave privada", re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")),
+]
+PUBLIC_SECRET_ENV = re.compile(r"\b(?:NEXT_PUBLIC_|VITE_|PUBLIC_|EXPO_PUBLIC_)\w*(?:SERVICE_ROLE|SECRET|PRIVATE|PASSWORD)\w*", re.IGNORECASE)
 
 JARGON_PATTERN = re.compile(
     r'(\.NET\s*\d+|React\s*\d+|Vue\s*\d+|Angular\s*\d+|Next\.?js\s*\d+|Node\.?js\s*\d+|no\s+Backend|API\s+(?:Conectada|Online)|Backend\s+(?:Conectado|Online)|Powered\s+by\s+\w+)',
@@ -148,7 +164,8 @@ JARGON_PATTERN = re.compile(
 )
 
 
-IGNORED_DIRS = {".git", ".claude", ".agents", ".agentes", ".squad", "node_modules", ".venv", "venv", "bin", "obj", "dist", "build", ".next", ".output", "__pycache__", "coverage"}
+IGNORED_DIRS = {".git", ".claude", ".agents", ".agentes", ".squad", "node_modules", ".venv", "venv", "bin", "obj", "dist", "build", ".next", ".output", "__pycache__", "coverage",
+                ".vercel", ".turbo", ".svelte-kit", ".nuxt", ".pytest_cache", ".mypy_cache", ".ruff_cache", "playwright-report", "test-results"}
 TEST_PATH_HINT = re.compile(r"(^|/)(tests?|__tests__|__mocks__|fixtures|stories|e2e|spec)(/|$)|\.(test|spec|stories)\.", re.IGNORECASE)
 
 
@@ -228,6 +245,13 @@ def inspect_project(args: dict[str, Any]) -> dict[str, Any]:
     }
     stacks = [label for label, patterns in markers.items()
               if any(Path(p).match(pattern) for p in files for pattern in patterns)]
+    platform_markers = {
+        "Next.js": lambda f: re.search(r"(^|/)next\.config\.(js|mjs|cjs|ts)$", f) is not None,
+        "Vite": lambda f: re.search(r"(^|/)vite\.config\.(js|mjs|cjs|ts)$", f) is not None,
+        "Vercel": lambda f: f == "vercel.json" or f.endswith("/vercel.json"),
+        "Supabase": lambda f: f.startswith("supabase/") and (f.endswith("config.toml") or "/migrations/" in f),
+    }
+    stacks += [label for label, test in platform_markers.items() if any(test(f) for f in files)]
 
     # 1. Auditoria de Persistência
     db_files = [f for f in files if any(f.endswith(ext) for ext in (".db", ".sqlite", ".sqlite3"))]
@@ -283,11 +307,12 @@ def inspect_project(args: dict[str, Any]) -> dict[str, Any]:
     jargon_leaks = find_ui_jargon_leaks(root, files)
     integration_test_paths = []
     for f in files:
-        if "test" not in f.lower() or not f.lower().endswith((".cs", ".ts", ".js", ".py")):
+        if "test" not in f.lower() or not f.lower().endswith((".cs", ".ts", ".tsx", ".js", ".py", ".sql")):
             continue
         try:
             test_text = safe_path(root, f).read_text(encoding="utf-8", errors="ignore")
-            if re.search(r"(?i)integration|webapplicationfactory|testcontainer|testserver|httpclient", f + "\n" + test_text):
+            if re.search(r"(?i)integration|webapplicationfactory|testcontainer|testserver|httpclient|supertest|fastify\.inject|testclient|"
+                         r"createClient\s*\(|supabase\s+start|plan\s*\(\s*\d+\s*\)|row level security|\brls\b", f + "\n" + test_text):
                 integration_test_paths.append(f)
         except Exception:
             pass
@@ -364,19 +389,28 @@ def audit_code_delivery(args: dict[str, Any]) -> dict[str, Any]:
             except Exception:
                 pass
 
-    # 3. Trapaças no Backend: empty catch, Thread.Sleep
-    empty_catch_pattern = re.compile(r'catch\s*\([^\)]*\)\s*\{\s*\}', re.IGNORECASE)
+    # 3. Erros engolidos e bloqueios: C#/Java/JS/TS (catch vazio, .catch(() => {})), Python (except: pass), Go (err ignorado)
+    empty_catch_pattern = re.compile(r'catch\s*(?:\([^\)]*\))?\s*\{\s*\}', re.IGNORECASE)
+    empty_promise_catch = re.compile(r'\.catch\(\s*(?:\(\s*\w*\s*\)|\w+)\s*=>\s*(?:\{\s*\}|null|undefined)\s*\)')
+    py_except_pass = re.compile(r'^\s*except\b[^:\n]*:\s*(?:\n\s*)?pass\b', re.MULTILINE)
+    go_ignored_err = re.compile(r'if\s+err\s*!=\s*nil\s*\{\s*\}')
     for f in files:
-        if f.endswith(".cs") or f.endswith(".go") or f.endswith(".py"):
-            try:
-                full_path = safe_path(root, f)
-                txt = full_path.read_text(encoding="utf-8", errors="ignore")
-                if empty_catch_pattern.search(txt):
-                    findings.append(f"Tratamento Vazio de Erro (empty catch) em {f}.")
-                if "Thread.Sleep" in txt:
-                    findings.append(f"Bloqueio síncrono (Thread.Sleep) em {f}.")
-            except Exception:
-                pass
+        if is_test_path(f) or not f.endswith((".cs", ".java", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".py", ".go")):
+            continue
+        try:
+            txt = safe_path(root, f).read_text(encoding="utf-8", errors="ignore")
+            if f.endswith(".py"):
+                swallowed = py_except_pass.search(txt)
+            elif f.endswith(".go"):
+                swallowed = go_ignored_err.search(txt)
+            else:
+                swallowed = empty_catch_pattern.search(txt) or empty_promise_catch.search(txt)
+            if swallowed:
+                findings.append(f"Tratamento Vazio de Erro (erro engolido) em {f}.")
+            if f.endswith(".cs") and "Thread.Sleep" in txt:
+                findings.append(f"Bloqueio síncrono (Thread.Sleep) em {f}.")
+        except Exception:
+            pass
 
     verdict = "APROVADO" if not findings else "REPROVADO"
     return {
@@ -397,10 +431,10 @@ def audit_security_controls(args: dict[str, Any]) -> dict[str, Any]:
     security_tests_found: list[str] = []
 
     # 1. Checagem de Testes de Segurança Automatizados (AppSec)
-    test_files = [f for f in files if "test" in f.lower() and any(f.endswith(ext) for ext in (".cs", ".ts", ".js", ".py"))]
+    test_files = [f for f in files if "test" in f.lower() and any(f.endswith(ext) for ext in (".cs", ".ts", ".tsx", ".js", ".py", ".sql"))]
     for tf in test_files:
         base_name = Path(tf).name.lower()
-        if any(sec in base_name for sec in ("security", "ssrf", "auth", "bola", "idor", "xss", "csrf", "crypto")):
+        if any(sec in base_name for sec in ("security", "ssrf", "auth", "bola", "idor", "xss", "csrf", "crypto", "rls", "polic", "permission", "access")):
             security_tests_found.append(tf)
 
     if not security_tests_found:
@@ -448,6 +482,11 @@ def audit_security_controls(args: dict[str, Any]) -> dict[str, Any]:
         credentials_encryption_status = "plaintext_vulnerable"
         findings.append("Risco de Armazenamento Inseguro: Entidade armazena ApiKey/ApiSecret/Tokens de terceiros sem serviço de criptografia detectado no projeto.")
 
+    supabase = _audit_supabase_sql(root, files)
+    findings.extend(supabase["findings"])
+    findings.extend(_audit_client_secret_exposure(root, files))
+    findings.extend(_audit_js_server_routes(root, files))
+
     verdict = "APROVADO" if not findings else "REPROVADO"
     return {
         "project_root": str(root),
@@ -456,8 +495,101 @@ def audit_security_controls(args: dict[str, Any]) -> dict[str, Any]:
         "findings_count": len(findings),
         "security_tests_found": security_tests_found,
         "credentials_encryption_status": credentials_encryption_status,
+        "supabase_rls": {"tables_found": supabase["tables"], "tables_without_rls": supabase["without_rls"]},
+        "note": "Heurísticas: confirme cada achado lendo o código; ausência de achados não prova segurança.",
         "findings": findings
     }
+
+
+def _read(root: Path, rel: str) -> str:
+    try:
+        return safe_path(root, rel).read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return ""
+
+
+def _audit_supabase_sql(root: Path, files: list[str]) -> dict[str, Any]:
+    """Tabelas criadas em SQL versionado sem RLS habilitado e policies permissivas."""
+    sql_files = [f for f in files if f.endswith(".sql") and not is_test_path(f)]
+    all_sql = "\n".join(_read(root, f) for f in sql_files)
+    if not all_sql:
+        return {"tables": [], "without_rls": [], "findings": []}
+    ident = r'(?:"?(\w+)"?\.)?"?(\w+)"?'
+    created: dict[str, str] = {}
+    for f in sql_files:
+        for m in re.finditer(r"(?i)\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?" + ident, _read(root, f)):
+            schema, table = (m.group(1) or "public").lower(), m.group(2).lower()
+            if schema == "public":
+                created.setdefault(table, f)
+    rls_on = {m.group(2).lower() for m in re.finditer(r"(?i)\balter\s+table\s+(?:only\s+)?(?:if\s+exists\s+)?" + ident + r"\s+enable\s+row\s+level\s+security", all_sql)}
+    without = sorted(t for t in created if t not in rls_on)
+    findings = [f"Tabela sem RLS (Supabase): '{t}' criada em {created[t]} sem 'enable row level security'. Qualquer portador da anon key pode acessá-la." for t in without]
+    for f in sql_files:
+        txt = _read(root, f)
+        if re.search(r"(?i)create\s+policy[^;]*\busing\s*\(\s*true\s*\)", txt):
+            findings.append(f"Policy permissiva 'using (true)' em {f}: confirme que a tabela só tem dado público.")
+        starts = [m for m in re.finditer(r"(?im)^\s*create\s+(?:or\s+replace\s+)?function\s+([\w.\"]+)", txt)]
+        for i, m in enumerate(starts):
+            end = starts[i + 1].start() if i + 1 < len(starts) else len(txt)
+            nxt = re.search(r"(?im)^\s*(?:create|alter|grant|revoke|drop|insert|comment)\s", txt[m.end():end])
+            chunk = txt[m.start():m.end() + nxt.start()] if nxt else txt[m.start():end]
+            if re.search(r"(?i)security\s+definer", chunk) and not re.search(r"(?i)set\s+search_path", chunk):
+                findings.append(f"Função security definer sem 'set search_path' em {f} ({m.group(1)}).")
+    return {"tables": sorted(created), "without_rls": without, "findings": findings}
+
+
+def _audit_client_secret_exposure(root: Path, files: list[str]) -> list[str]:
+    """Segredos digitados no código, chave privilegiada no cliente e .env fora do .gitignore."""
+    findings: list[str] = []
+    code_ext = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".vue", ".svelte", ".astro", ".py", ".cs", ".go", ".json", ".yml", ".yaml", ".toml")
+    for f in files:
+        name = Path(f).name
+        is_env = name.startswith(".env")
+        if is_test_path(f) or not (f.endswith(code_ext) or is_env) or name in ("package-lock.json", "pnpm-lock.yaml", "yarn.lock"):
+            continue
+        txt = _read(root, f)
+        if not txt:
+            continue
+        if not is_env or name == ".env.example":
+            for label, pattern in SECRET_VALUE_PATTERNS:
+                if pattern.search(txt):
+                    findings.append(f"Segredo digitado no código ({label}) em {f}. Mova para variável de ambiente e revogue a chave exposta.")
+        for m in sorted(set(PUBLIC_SECRET_ENV.findall(txt))):
+            findings.append(f"Variável pública com nome de segredo em {f}: '{m}'. Prefixos NEXT_PUBLIC_/VITE_ vão para o bundle do navegador.")
+        if f.endswith((".ts", ".tsx", ".js", ".jsx", ".vue", ".svelte")) and re.search(r"(?i)service_role|SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY", txt):
+            client_side = re.search(r"^\s*['\"]use client['\"]", txt, re.MULTILINE) or re.search(r"import\.meta\.env", txt) \
+                or re.search(r"(^|/)(components|hooks|pages|src/(?!server|api))/", f) and not re.search(r"(^|/)(api|server)/", f)
+            if client_side:
+                findings.append(f"Chave privilegiada do Supabase referenciada em código de cliente: {f}. A service_role/secret key só pode existir no servidor.")
+    env_files = [f for f in files if Path(f).name in (".env", ".env.local", ".env.production", ".env.development")]
+    gi = _read(root, ".gitignore")
+    if env_files and not re.search(r"(?m)^\s*(?:\*\*/)?\.env(?:\*|\.\*|\.local)?\s*$", gi):
+        findings.append(f"Arquivos .env presentes ({', '.join(env_files)}) sem regra '.env*' no .gitignore: risco de versionar segredos.")
+    return findings
+
+
+def _audit_js_server_routes(root: Path, files: list[str]) -> list[str]:
+    """Route Handlers e Server Actions (Next.js) que alteram dados sem checagem de usuário no servidor."""
+    findings: list[str] = []
+    mutating_export = re.compile(r"export\s+(?:async\s+)?(?:function\s+|const\s+)(POST|PUT|PATCH|DELETE)\b")
+    db_write = re.compile(r"\.(?:insert|update|upsert|delete)\s*\(|prisma\.\w+\.(?:create|update|upsert|delete)|db\.(?:insert|update|delete)\s*\(")
+    for f in files:
+        if is_test_path(f) or not f.endswith((".ts", ".tsx", ".js", ".jsx", ".mjs")):
+            continue
+        txt = _read(root, f)
+        if not txt or SERVER_AUTH_MARKERS.search(txt):
+            continue
+        app_route = re.search(r"(^|/)app/(.*/)?route\.(ts|js|mjs)$", f)
+        pages_api = re.search(r"(^|/)pages/api/", f)
+        if app_route or pages_api:
+            verbs = sorted(set(mutating_export.findall(txt)))
+            if not verbs and pages_api:
+                verbs = sorted(set(re.findall(r"req\.method\s*===?\s*['\"](POST|PUT|PATCH|DELETE)['\"]", txt)))
+            if verbs:
+                findings.append(f"Rota de mutação sem checagem de usuário/assinatura detectada ({', '.join(verbs)}) em {f}. Valide a sessão no servidor (ex.: supabase.auth.getUser()) ou a assinatura do webhook/segredo do cron.")
+        elif re.search(r"^\s*['\"]use server['\"]", txt, re.MULTILINE) and db_write.search(txt):
+            findings.append(f"Server Action que grava dados sem checagem de usuário detectada em {f}. Confirme getUser() no servidor ou RLS cobrindo a operação.")
+    return findings
 
 
 def initialize_docs(args: dict[str, Any]) -> dict[str, Any]:
@@ -580,7 +712,9 @@ def validate_completion_checklist(args: dict[str, Any]) -> dict[str, Any]:
             issues.append(f"{required}: evidência ausente ou placeholder.")
         if normalized == "REPROVADO":
             issues.append(f"{required}: reprovado bloqueia o aceite final.")
-        if required in (FINALIZER_CHECKS[6], FINALIZER_CHECKS[7], FINALIZER_CHECKS[8], FINALIZER_CHECKS[9]) and normalized == "APROVADO":
+        if required == FINALIZER_CHECKS[10] and normalized == "APROVADO" and not re.search(r"(?i)(dois|2|two)\s+(usu[aá]rios|users|identidades)|user\s*a\b.*user\s*b\b|usu[aá]rio\s*a\b.*usu[aá]rio\s*b\b", evidence):
+            issues.append(f"{required}: aprovação exige teste com dois usuários (A não acessa dados de B).")
+        if required in (FINALIZER_CHECKS[6], FINALIZER_CHECKS[7], FINALIZER_CHECKS[8], FINALIZER_CHECKS[9], FINALIZER_CHECKS[10]) and normalized == "APROVADO":
             if not re.search(r"(?i)(comando|command)\s*[:=].+", evidence) or not re.search(r"(?i)(resultado|result)\s*[:=].+", evidence):
                 issues.append(f"{required}: aprovação exige comando e resultado explícitos.")
         if required == FINALIZER_CHECKS[8] and normalized == "APROVADO" and not re.search(r"(?i)(integra[cç][aã]o|integration|webapplicationfactory|testcontainer|teste de API)", evidence):
@@ -722,10 +856,10 @@ def get_design_reference(args: dict[str, Any]) -> dict[str, Any]:
     if company:
         matched_dir = None
         company_name = company
-        for c in all_companies:
-            if c.lower() == company or c.lower().startswith(company) or company in c.lower():
-                matched_dir = catalog_dir / c
-                company_name = c
+        for rule in (lambda c: c.lower() == company, lambda c: c.lower().startswith(company), lambda c: company in c.lower()):
+            hit = next((c for c in all_companies if rule(c)), None)
+            if hit:
+                matched_dir, company_name = catalog_dir / hit, hit
                 break
 
         if not matched_dir or not matched_dir.is_dir():
@@ -965,11 +1099,21 @@ def _detect_checks(root: Path, files: list[str]) -> list[dict[str, Any]]:
         run = [runner, "run"] if runner != "yarn" else [runner]
         install = [runner, "ci"] if runner == "npm" and (pkg_dir / "package-lock.json").exists() else [runner, "install"]
         needs_install = not (pkg_dir / "node_modules").is_dir()
+        node = {"stack": "Node", "cwd": folder, "install": install, "needs_install": needs_install}
+        if "lint" in scripts:
+            checks.append({"kind": "lint", "cmd": [*run, "lint"], **node})
+        typecheck = next((s for s in ("typecheck", "type-check", "tsc") if s in scripts), None)
+        if typecheck:
+            checks.append({"kind": "typecheck", "cmd": [*run, typecheck], **node})
+        elif (pkg_dir / "tsconfig.json").is_file():
+            checks.append({"kind": "typecheck", "cmd": ["npx", "--no-install", "tsc", "--noEmit"], **node})
         if "build" in scripts:
-            checks.append({"kind": "build", "stack": "Node", "cwd": folder, "cmd": [*run, "build"], "install": install, "needs_install": needs_install})
+            checks.append({"kind": "build", "cmd": [*run, "build"], **node})
         test_script = str(scripts.get("test", ""))
         if test_script and "no test specified" not in test_script:
-            checks.append({"kind": "test", "stack": "Node", "cwd": folder, "cmd": [runner, "test"], "install": install, "needs_install": needs_install})
+            checks.append({"kind": "test", "cmd": [runner, "test"], **node})
+    if any(f.startswith("supabase/tests/") and f.endswith(".sql") for f in files):
+        checks.append({"kind": "db", "stack": "Supabase", "cwd": ".", "cmd": ["supabase", "test", "db"]})
     has_py_manifest = any(Path(f).name in ("pyproject.toml", "requirements.txt", "pytest.ini") for f in files)
     has_py_tests = any(re.search(r"(^|/)(tests?/|test_[^/]*\.py$|[^/]*_test\.py$)", f) for f in files)
     if has_py_manifest and has_py_tests:
@@ -986,9 +1130,10 @@ def _detect_checks(root: Path, files: list[str]) -> list[dict[str, Any]]:
 def run_checks(args: dict[str, Any]) -> dict[str, Any]:
     """Executa build e testes reais detectados na stack e devolve exit code e trecho final da saída (evidência verificável)."""
     root = project_root(args.get("project_root", ""))
-    only = args.get("only") or ["build", "test"]
-    if not isinstance(only, list) or not all(k in ("build", "test") for k in only):
-        raise SquadError("only deve ser uma lista com 'build' e/ou 'test'")
+    kinds = ("lint", "typecheck", "build", "test", "db")
+    only = args.get("only") or ["lint", "typecheck", "build", "test"]
+    if not isinstance(only, list) or not all(k in kinds for k in only):
+        raise SquadError(f"only deve ser uma lista com valores de: {', '.join(kinds)}")
     timeout = max(10, min(int(args.get("timeout_seconds") or 300), 1800))
     install = bool(args.get("install", False))
     files = list_files(root)
@@ -1056,11 +1201,11 @@ TOOLS = [
     {"name": "update_agent_report", "description": "Cria ou substitui o relatório completo de um agente em .squad/.", "inputSchema": {"type": "object", "properties": {"project_root": {"type": "string"}, "agent": {"type": "string", "enum": list(AGENTS)}, "content": {"type": "string"}}, "required": ["project_root", "agent", "content"]}},
     {"name": "update_roadmap", "description": "Cria ou substitui .squad/coordenacao/roadmap.md.", "inputSchema": {"type": "object", "properties": {"project_root": {"type": "string"}, "content": {"type": "string"}}, "required": ["project_root", "content"]}},
     {"name": "validate_squad_artifacts", "description": "Verifica existência, seções especializadas, links de evidência, transparência de persistência do DBA e vazamento de jargão na UI.", "inputSchema": {"type": "object", "properties": {"project_root": {"type": "string"}}, "required": ["project_root"]}},
-    {"name": "audit_security_controls", "description": "Audita mecanismos de segurança do AppSec: proteção de rotas com autenticação/JWT, testes de segurança automatizados (SSRF, Auth, BOLA) e criptografia de credenciais de terceiros.", "inputSchema": {"type": "object", "properties": {"project_root": {"type": "string"}}, "required": ["project_root"]}},
+    {"name": "audit_security_controls", "description": "Audita mecanismos de segurança do AppSec: rotas de mutação sem auth (.NET [Authorize], Next.js Route Handlers/Server Actions), tabelas Supabase sem RLS, policies using(true), security definer sem search_path, segredos no código, chave privilegiada no cliente, .env fora do .gitignore, testes de segurança e criptografia de credenciais de terceiros.", "inputSchema": {"type": "object", "properties": {"project_root": {"type": "string"}}, "required": ["project_root"]}},
     {"name": "get_design_reference", "description": "Consulta o catálogo de 84 sistemas de design de classe mundial (Linear, Stripe, Vercel, Supabase, Apple, etc.) do awesome-design-md ou pesquisa padrões visuais.", "inputSchema": {"type": "object", "properties": {"company": {"type": "string", "description": "Nome da empresa de referência (ex: 'linear', 'stripe', 'vercel', 'supabase', 'apple', 'airbnb')"}, "query": {"type": "string", "description": "Termo de busca livre nos DESIGN.md (ex: 'dark mode', 'tokens', 'spacing')"}}}},
     {"name": "audit_frontend_taste", "description": "Audita a interface do usuário contra AI slop e clichês de design (heurísticas taste-skill: cópia genérica, cores hex não padronizadas, falta de reduced-motion).", "inputSchema": {"type": "object", "properties": {"project_root": {"type": "string", "description": "Raiz do projeto a auditar"}}, "required": ["project_root"]}},
     {"name": "run_playwright_cli", "description": "Executa comandos do Microsoft Playwright CLI integrado (screenshot, snapshot, console, requests, resize, open, close) para capturar evidências reais do navegador.", "inputSchema": {"type": "object", "properties": {"command": {"type": "string", "enum": ["open", "snapshot", "screenshot", "console", "requests", "resize", "close"], "description": "Comando Playwright a executar"}, "url": {"type": "string", "description": "URL da aplicação (ex: http://localhost:5173)"}, "viewport": {"type": "string", "enum": ["desktop", "mobile"], "description": "Tamanho da viewport (desktop: 1440x900, mobile: 390x844)"}, "project_root": {"type": "string", "description": "Raiz do projeto"}, "output_path": {"type": "string", "description": "Caminho explícito de destino para captura/screenshot"}}, "required": ["command"]}},
-    {"name": "run_checks", "description": "Executa build e testes REAIS detectados na stack (dotnet, npm/pnpm/yarn, pytest, go, cargo) e devolve status, exit code e trecho da saída como evidência; grava em .squad/evidencias/run_checks.md. Não executa comandos arbitrários.", "inputSchema": {"type": "object", "properties": {"project_root": {"type": "string"}, "only": {"type": "array", "items": {"type": "string", "enum": ["build", "test"]}, "description": "Padrão: build e test"}, "install": {"type": "boolean", "description": "Instala dependências Node ausentes antes (npm ci/install). Padrão: false"}, "timeout_seconds": {"type": "integer", "description": "Timeout por comando (10-1800, padrão 300)"}}, "required": ["project_root"]}},
+    {"name": "run_checks", "description": "Executa lint, typecheck, build e testes REAIS detectados na stack (dotnet, npm/pnpm/yarn, pytest, go, cargo, supabase test db) e devolve status, exit code e trecho da saída como evidência; grava em .squad/evidencias/run_checks.md. Não executa comandos arbitrários.", "inputSchema": {"type": "object", "properties": {"project_root": {"type": "string"}, "only": {"type": "array", "items": {"type": "string", "enum": ["lint", "typecheck", "build", "test", "db"]}, "description": "Padrão: lint, typecheck, build e test. 'db' roda supabase test db (exige supabase start)."}, "install": {"type": "boolean", "description": "Instala dependências Node ausentes antes (npm ci/install). Padrão: false"}, "timeout_seconds": {"type": "integer", "description": "Timeout por comando (10-1800, padrão 300)"}}, "required": ["project_root"]}},
 ]
 HANDLERS = {"run_checks": run_checks, "inspect_project": inspect_project, "audit_code_delivery": audit_code_delivery,
             "validate_completion_checklist": validate_completion_checklist,
@@ -1078,7 +1223,7 @@ def respond(message: dict[str, Any]) -> dict[str, Any] | None:
         return None
     if method == "initialize":
         return {"jsonrpc": "2.0", "id": ident, "result": {"protocolVersion": PROTOCOL_VERSION,
-                "capabilities": {"tools": {"listChanged": False}}, "serverInfo": {"name": "squad", "version": "1.4.0"}}}
+                "capabilities": {"tools": {"listChanged": False}}, "serverInfo": {"name": "squad", "version": "1.5.0"}}}
     if method == "ping":
         return {"jsonrpc": "2.0", "id": ident, "result": {}}
     if method == "tools/list":

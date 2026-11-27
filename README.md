@@ -11,19 +11,21 @@ A skill é agnóstica de domínio e de stack: tipo de negócio, banco, linguagem
 ```
 ou, em linguagem natural: *"use a skill squad e crie ..."*.
 
-1. **Entrevista (uma rodada):** stack (.NET, Node/TypeScript, Python, sem backend), frontend, **banco** (PostgreSQL, **Supabase**, SQL Server, SQLite), se já existe projeto Supabase, autenticação, integrações externas e credenciais, deploy e nível de testes. Cada pergunta traz uma opção recomendada. O que o prompt ou o projeto já respondem não é perguntado de novo.
-2. **Plano** curto (modo `lite`) ou mesa-redonda completa (modo `full`).
-3. **Construção por fatias verticais** (dados → API → tela → teste), com build e testes a cada fatia.
-4. **Verificação real:** `run_checks`, auditorias mecânicas e revisão no browser.
-5. **Entrega:** como rodar, o que passou/falhou e **o que ainda depende de você** (chaves, contas, aprovações).
+1. **Descoberta de mercado:** o PM levanta 3 a 5 produtos que já fazem algo parecido e os blocos prontos (APIs oficiais, bibliotecas, templates) e propõe **construir × integrar × adaptar** para cada capacidade, com políticas, custos e riscos (`references/discovery.md`).
+2. **Entrevista (uma rodada, até 8 perguntas):** stack (com recomendação **Next.js + Supabase no Vercel** quando não há preferência), **banco** (PostgreSQL, **Supabase**, SQL Server, SQLite), autenticação, integrações e credenciais, rotinas em segundo plano, deploy e nível de testes, mais até duas perguntas vindas da descoberta. O que o prompt ou o projeto já respondem não é perguntado de novo.
+3. **Plano** curto (modo `lite`) ou mesa-redonda completa (modo `full`), já com as ameaças principais.
+4. **Construção por fatias verticais** (dados → API → tela → teste), com RLS/autorização desde a primeira tabela e build/testes a cada fatia.
+5. **Verificação real:** `run_checks` (lint, typecheck, build, testes), auditorias mecânicas, revisão no browser (acessibilidade e Lighthouse quando disponíveis) e **revisão independente** do crítico de código e do AppSec, em subagentes com contexto limpo.
+6. **Deploy de preview** no Vercel/Supabase, só se você autorizar, com smoke test na URL.
+7. **Entrega:** como rodar, URL de preview, o que passou/falhou e **o que ainda depende de você** (chaves, contas, aprovações), com o passo a passo.
 
 | Modo | Quando | Equipe | Fecha com |
 |---|---|---|---|
-| `lite` (padrão para "crie...") | App novo / feature grande | Arquiteto, Construtor, Verificador | `run_checks` + `audit_code_delivery` + um crítico |
+| `lite` (padrão para "crie...") | App novo / feature grande | Arquiteto, Construtor, Verificador | `run_checks` + auditorias + crítico e AppSec independentes + tabela de aceite |
 | `full` | Pedido explícito de mesa-redonda | 11 especialistas + 2 críticos + `@Finalizer` | Gate independente do Finalizer |
 | `audit` | Projeto existente, sem construir | Especialistas relevantes | Roadmap priorizado |
 
-Referências da skill: `references/intake.md` (perguntas), `references/stacks.md` (perfis e comandos por stack, incluindo Supabase), `references/domain-packs.md` (como acoplar conhecimento de um nicho sem poluir a skill).
+Referências da skill: `references/discovery.md` (descoberta de mercado), `references/intake.md` (perguntas), `references/stacks.md` (perfis e comandos por stack, incluindo Next.js + Supabase no Vercel), `references/stack-translation.md` (equivalente de cada exigência dos agentes em cada stack + armadilhas de Supabase/Vercel), `references/integrations.md` (mensageria, coleta de dados, jobs, webhooks, pagamentos, LLM), `references/domain-packs.md` (como acoplar conhecimento de um nicho sem poluir a skill).
 
 ## Instalação
 
@@ -61,10 +63,10 @@ Servidor stdio em Python 3.10+, sem dependências. Sem ele a skill funciona (usa
 
 | Ferramenta | Função |
 |---|---|
-| `run_checks` | **Roda build e testes reais** (dotnet, npm/pnpm/yarn, pytest, go, cargo), devolve status/exit code/saída e grava `.squad/evidencias/run_checks.md`. Só comandos conhecidos; `install=true` instala dependências Node ausentes. |
+| `run_checks` | **Roda lint, typecheck, build e testes reais** (dotnet, npm/pnpm/yarn, pytest, go, cargo; `only=["db"]` para `supabase test db`), devolve status/exit code/saída e grava `.squad/evidencias/run_checks.md`. Só comandos conhecidos; `install=true` instala dependências Node ausentes. |
 | `inspect_project` | Inventário, stack detectada, persistência (PostgreSQL, Supabase, SQLite...), autenticação, configs, jargão na UI e o `stack.md` declarado. |
 | `audit_code_delivery` | Varredura mecânica: latência simulada, IDs falsos, KPIs digitados no JSX, mocks embutidos, `catch` vazio, `Thread.Sleep`. Ignora arquivos de teste. |
-| `audit_security_controls` | Rotas de mutação sem `[Authorize]`, testes de segurança ausentes, credenciais sem criptografia. |
+| `audit_security_controls` | Rotas de mutação sem auth (.NET `[Authorize]`, Next.js Route Handlers e Server Actions), **tabelas Supabase sem RLS**, policies `using (true)`, `security definer` sem `search_path`, segredos digitados no código, `service_role` no cliente, `NEXT_PUBLIC_*`/`VITE_*` com nome de segredo, `.env` fora do `.gitignore`, testes de segurança ausentes, credenciais sem criptografia. |
 | `audit_frontend_taste` | Clichês de IA, cores arbitrárias, `prefers-reduced-motion`. |
 | `get_design_reference` | Catálogo local de 84 `DESIGN.md` de referência. |
 | `run_playwright_cli` | Playwright CLI (comandos permitidos fixos, URL apenas http/https). |

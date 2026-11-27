@@ -4,6 +4,10 @@ Objetivo: decidir, com o mínimo de perguntas, tudo que muda materialmente a apl
 
 No Claude Code use `AskUserQuestion` (até 4 perguntas por chamada; agrupe por tema e faça mais de uma chamada se precisar). No Antigravity, use uma lista numerada curta.
 
+Antes das perguntas, mostre o resumo da descoberta (`references/discovery.md`, 3 a 5 linhas) e inclua as até duas perguntas de "construir × integrar" que ela gerou. Elas têm prioridade sobre as perguntas genéricas abaixo, porque mudam a arquitetura.
+
+Orçamento de perguntas: **no máximo 8** na rodada principal. Se passar disso, corte as de menor impacto e decida-as você (registrando como "decidido pelo squad").
+
 ## Bloco 1 — Produto (só se o pedido for vago)
 
 - Qual é o resultado principal para o usuário final e quem usa? (uma frase)
@@ -14,7 +18,8 @@ No Claude Code use `AskUserQuestion` (até 4 perguntas por chamada; agrupe por t
 
 - **Backend:** .NET (C#) · Node/TypeScript · Python (FastAPI) · sem backend próprio (BaaS, ex.: Supabase) · outro.
 - **Frontend:** React + TypeScript + Vite · Next.js · outro · sem frontend (API apenas).
-- Recomendação padrão quando o usuário diz "decida": **.NET + React + PostgreSQL** (ou Supabase, ver abaixo). Se o usuário disser que tem mais familiaridade com uma linguagem, use-a.
+- Recomendação quando o usuário diz "decida": use a tabela "Qual perfil recomendar" de `references/stacks.md`. Sem nenhum sinal, para web app/SaaS recomende o **perfil G (Next.js + Supabase no Vercel)**; se o usuário tiver familiaridade com uma linguagem, prefira-a.
+- Uma pergunta combinada costuma bastar: "Stack: Next.js + Supabase no Vercel (recomendado) · .NET + React + PostgreSQL · Python + React · outra".
 
 ## Bloco 3 — Banco de dados
 
@@ -42,7 +47,10 @@ No Claude Code use `AskUserQuestion` (até 4 perguntas por chamada; agrupe por t
 
 ## Bloco 6 — Execução e qualidade
 
-- **Onde roda:** local (Docker) · nuvem (qual?) · ainda não sei. Windows, Linux ou ambos?
+- **Onde roda:** Vercel (frontend/API) + Supabase cloud · local (Docker) · outra nuvem (qual?) · ainda não sei. Windows, Linux ou ambos?
+- Se **Vercel**: já tem conta/time e projeto? O squad pode fazer deploy de **preview** ao final (exige `vercel login` feito por você)? Produção fica para você aprovar depois. Domínio próprio?
+- Se **Supabase cloud**: projeto separado para desenvolvimento/preview e produção? (recomendado: sim)
+- **Rotina em segundo plano:** precisa rodar algo sozinho (coleta, envio, relatório)? Com que frequência? (define Vercel Cron × `pg_cron`/Edge Function; ver `references/integrations.md`)
 - **Nível de testes:** básico (build + unitários) · completo (+ integração com banco real + E2E no browser). Recomendado: completo para o fluxo principal.
 - **Design:** referência visual desejada (marcas do catálogo `get_design_reference`), idioma da interface, existência de marca/logo.
 

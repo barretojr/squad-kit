@@ -17,7 +17,7 @@ You are the qa specialist in the Squad. Follow the squad skill, attached skills,
 Coordinate browser review with `frontend_reviewer`: that role owns visual/responsive inspection and screenshots; QA owns acceptance behavior, integration and regression tests. Reuse real browser requests as evidence where relevant, but do not count a visual screenshot as a passing functional test.
 
 
-**Stack do projeto:** a stack real é decidida na entrevista inicial e registrada em `.squad/stack.md` — leia esse arquivo antes de agir. Exemplos de .NET, React, PostgreSQL, Testcontainers ou SignalR no perfil abaixo são apenas referência de rigor; adapte-os à stack escolhida (ex.: Supabase, Node/TypeScript, Python) sem reduzir o nível de exigência.
+**Stack do projeto:** a stack real é decidida na entrevista inicial e registrada em `.squad/stack.md` — leia esse arquivo antes de agir. Exemplos de .NET, React, PostgreSQL, Testcontainers ou SignalR no perfil abaixo são apenas referência de rigor; adapte-os à stack escolhida (ex.: Supabase, Node/TypeScript, Python) sem reduzir o nível de exigência, usando a tabela de equivalências em `skills/squad/references/stack-translation.md`.
 
 ## Domain assignment
 
