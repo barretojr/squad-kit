@@ -1,29 +1,34 @@
 # Upstream attribution
 
-This skill is a concise, reworded workflow adaptation informed by [leonxlnx/taste-skill](https://github.com/leonxlnx/taste-skill), especially its product-specific art direction and real-browser finish review. It does not include the upstream scripts, images, templates, or full skill text.
+This folder vendors the skill **design-taste-frontend** from [leonxlnx/taste-skill](https://github.com/leonxlnx/taste-skill) (upstream folder `skills/taste-skill`, install name `design-taste-frontend`).
 
-Upstream project copyright: Copyright (c) 2026 Leonxlnx. The upstream project is licensed under the MIT License. Reviewed 2026-11-12.
+- **License:** MIT, Copyright (c) 2026 Leonxlnx. The full text is in [`LICENSE`](LICENSE) in this folder and must stay with any copy of it.
+- **Reviewed:** license and repository checked on 2026-11-27.
 
-```text
-MIT License
+## What is upstream and what is local
 
-Copyright (c) 2026 Leonxlnx
+| Path | Origin |
+|---|---|
+| `references/`, `scripts/`, `assets/`, `library/` | Copied from upstream (not edited in this repository) |
+| `UPSTREAM_SKILL.md` | Copy of the upstream `SKILL.md` (kept for reference) |
+| `SKILL.md` | **Local adaptation** for the Squad (shorter workflow, Squad paths, MCP `audit_frontend_taste`) |
+| `UPSTREAM.md` | Local (this file) |
+| `LICENSE` | Upstream license text |
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Until 2026-11-27 this repository carried two copies of the upstream suite (`taste-skill/` and `design-taste-frontend/`). They were merged into this folder; `library/` (palettes and type pairings that `scripts/start.mjs` reads) came from the old `taste-skill/` copy, which was the only one that had it.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+## Third-party media inside the assets
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+Photographs, icons and fonts referenced by the assets are **not** covered by the MIT license above; they keep their own licenses (upstream sources them from open archives such as Wikimedia Commons and Unsplash, and fonts from Google Fonts). Their credits ship with the assets and must be kept:
+
+- `assets/layout/img/credits.json`
+- `assets/moments/_demo/credits.json`
+- `assets/scenes/_demo/credits.json`
+- `assets/icons/demo/icons-credits.json`
+- `assets/ui/icons/icons-credits.json`
+
+When a generated page uses one of these photographs, keep the credit line that the upstream scripts produce (`scripts/photos.mjs credits`). Never ship a brand logo from the icon set as if it were the product's own mark.
+
+## Updating from upstream
+
+Replace `references/`, `scripts/`, `assets/`, `library/`, `UPSTREAM_SKILL.md` and `LICENSE` with the upstream versions, keep the local `SKILL.md`, then update the review date above.

@@ -34,7 +34,7 @@ Referências da skill: `references/discovery.md` (descoberta de mercado), `refer
 ```powershell
 python install_claude.py --project C:\Projetos\MinhaApp     # .claude/ no projeto
 python install_claude.py --global                           # ~/.claude/
-python install_claude.py --project C:\Projetos\MinhaApp --with-heavy-skills   # + taste-skill e playwright-cli (~100 MB)
+python install_claude.py --project C:\Projetos\MinhaApp --with-heavy-skills   # + design-taste-frontend (taste-skill) e playwright-cli (~60 MB)
 ```
 
 Instala 8 skills leves, os 14 agentes convertidos (a descrição de cada um restringe o uso ao fluxo da skill, então eles não disparam sozinhos) e o servidor MCP **sem registrá-lo**. O MCP é opcional; ative-o só no projeto que precisar, dentro dele:
@@ -85,7 +85,7 @@ squad-kit/                 # única fonte versionada
 └── skills/
     ├── squad/    # SKILL.md + references/ (intake, stacks, domain-packs) + templates/
     ├── design-reference/     # catálogo awesome-design-md
-    ├── design-taste-frontend/, taste-skill/, playwright-cli/   # pesados, opcionais
+    ├── design-taste-frontend/, playwright-cli/   # pesados, opcionais (terceiros, ver Créditos)
     └── product-research, product-brand-design, quality-validation, security-validation, frontend-integration, spatial-design
 install.ps1 / install.sh      # Antigravity
 install_claude.py             # Claude Code
@@ -98,7 +98,7 @@ Documentação de trabalho do produto fica em `.squad/` no projeto-alvo (relató
 | Projeto | Uso | Licença |
 |---|---|---|
 | [VoltAgent/awesome-design-md](https://github.com/voltagent/awesome-design-md) | Catálogo de 84 `DESIGN.md` | [MIT](https://github.com/voltagent/awesome-design-md/blob/main/LICENSE) |
-| [leonxlnx/taste-skill](https://github.com/leonxlnx/taste-skill) | Direção de arte e heurísticas anti-slop | [MIT](https://github.com/leonxlnx/taste-skill/blob/main/LICENSE) |
+| [leonxlnx/taste-skill](https://github.com/leonxlnx/taste-skill) | Skill `design-taste-frontend` (direção de arte, scripts e assets anti-slop), em `skills/design-taste-frontend/` com `LICENSE` e `UPSTREAM.md`. Fotos, ícones e fontes dos assets mantêm licenças próprias (créditos nos `credits.json`). | [MIT](https://github.com/leonxlnx/taste-skill/blob/main/LICENSE) |
 | [Microsoft Playwright CLI](https://github.com/microsoft/playwright-cli) | Inspeção de browser | [Apache-2.0](https://github.com/microsoft/playwright-cli/blob/main/LICENSE) |
 
 O [LICENSE](LICENSE) cobre o conteúdo original deste repositório; materiais de terceiros mantêm suas licenças.

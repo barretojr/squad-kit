@@ -5,7 +5,7 @@ Uso:
   python install_claude.py --project C:/Projetos/MinhaApp   # .claude/ dentro do projeto
   python install_claude.py --global                         # ~/.claude/
 Opções:
-  --with-heavy-skills   inclui taste-skill, design-taste-frontend e playwright-cli (~100 MB)
+  --with-heavy-skills   inclui design-taste-frontend (taste-skill, MIT) e playwright-cli (~60 MB)
   --register-mcp        executa `claude mcp add` (escopo local ao projeto; só vale com --project)
 Sem dependências externas. Os agentes são convertidos para o formato do Claude Code e só são
 acionados quando a skill squad os chama (a descrição de cada um diz isso).
@@ -21,7 +21,9 @@ from pathlib import Path
 SRC = Path(__file__).resolve().parent / "squad-kit"
 LIGHT_SKILLS = ["squad", "product-research", "product-brand-design", "quality-validation",
                 "security-validation", "frontend-integration", "design-reference", "spatial-design"]
-HEAVY_SKILLS = ["design-taste-frontend", "taste-skill", "playwright-cli"]
+HEAVY_SKILLS = ["design-taste-frontend", "playwright-cli"]
+# Nome antigo da cópia duplicada da taste-skill, removida do repositório em 2026-11-27.
+LEGACY_SKILLS = ["taste-skill"]
 DROP_KEYS = ("subagent:", "mainAgent:", "inheritCustomizations:", "commandExecutionPolicy:")
 PREFIX = "[squad] Use SOMENTE quando a skill squad chamar este agente pelo nome. "
 
@@ -120,6 +122,10 @@ def main() -> int:
                 fh.write(("\n" if current and not current.endswith("\n") else "") + "\n# Squad artifacts\n.squad/\n")
 
     print(f"Skills ({len(skills)}), agentes e servidor MCP instalados em {base}")
+    for legacy in LEGACY_SKILLS:
+        if (base / "skills" / legacy).is_dir():
+            print(f"Aviso: '{base / 'skills' / legacy}' é uma cópia antiga e duplicada de design-taste-frontend. "
+                  "Ela não é mais usada; apague a pasta quando quiser liberar espaço.")
     cmd = ["claude", "mcp", "add", "squad", "--scope", "local", "--", sys.executable, server]
     if args.register_mcp and not args.is_global:
         if shutil.which("claude"):
