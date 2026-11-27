@@ -1,38 +1,38 @@
-# Tradução de rigor entre stacks
+# Translating rigor between stacks
 
-Os perfis dos agentes foram escritos com exemplos de .NET, React, PostgreSQL, Testcontainers e SignalR. Eles definem **o nível de exigência**, não a tecnologia. Quando a stack em `.squad/stack.md` for outra, aplique o equivalente desta tabela. Se não houver equivalente, registre "N/A — motivo" no relatório; não rebaixe a exigência em silêncio.
+Several agent profiles use .NET, React, PostgreSQL, Testcontainers and SignalR as examples. They define **the level of rigor**, not the technology. When the stack in `.squad/stack.md` is different, apply the equivalent from this table. If there is no equivalent, record "N/A — reason" in the report; never lower the bar silently.
 
-| Exigência (exemplo .NET no perfil) | Next.js + Supabase (Vercel) | React/Vite + Supabase (sem backend) | Node (Fastify/Nest) | Python (FastAPI) |
+| Requirement (.NET example) | Next.js + Supabase (Vercel) | React/Vite + Supabase (no backend) | Node (Fastify/Nest) | Python (FastAPI) |
 |---|---|---|---|---|
-| `[Authorize]` em rotas de mutação | Checar sessão no servidor (`supabase.auth.getUser()` em Route Handler/Server Action/middleware) **e** RLS na tabela | **RLS + policies** com `auth.uid()`; Edge Function valida JWT | hook/guard de auth por rota | `Depends()` de auth por rota |
-| Filtrar por `UserId`/`TenantId` das claims (BOLA) | Policy `using (auth.uid() = user_id)`; nunca confiar em id do body | idem | `where user_id = req.user.id` | idem |
-| DTO imutável, sem mass assignment | Schema Zod no input da Server Action/Route Handler; `insert` só com campos permitidos | Policy `with check` + colunas com `grant` restrito | Zod/class-validator | Pydantic |
-| EF Core migrations | `supabase migration new` + `supabase db push`; tipos com `supabase gen types` | idem | Prisma/Drizzle migrations | Alembic |
-| Testcontainers + PostgreSQL real | `supabase start` (Postgres/Auth locais) + testes de integração (Vitest) contra ele; `supabase test db` (pgTAP) para policies | idem | Testcontainers Node ou Postgres em Docker | pytest + Postgres em Docker |
-| `WebApplicationFactory` (teste de API) | Chamar Route Handlers via `fetch` contra `next dev`/`next start` local, ou testar a função com request real | Chamar Supabase local com dois usuários reais | `fastify.inject` / supertest | `TestClient` |
-| SignalR (tempo real) | Supabase Realtime (canal autorizado por RLS) | idem | WebSocket/SSE com auth | WebSocket com auth |
-| `ProblemDetails` sem vazar stack trace | Resposta de erro padronizada; `error.tsx`; sem `error.message` do banco para o cliente | Mensagens de erro mapeadas no cliente | error handler global | exception handler |
-| `RateLimiter` nativo | Rate limit no middleware/edge ou serviço de KV; limites do Supabase Auth configurados | Limites do Supabase Auth + Edge Function | `@fastify/rate-limit` | `slowapi` |
-| Segredos no `appsettings`/User Secrets | Variáveis de ambiente do Vercel por ambiente (Development/Preview/Production); `NEXT_PUBLIC_*` **só** para valores públicos | `VITE_*` é público: só URL e `anon`/publishable key | `.env` + secret store | idem |
-| Dockerfile chiseled non-root | N/A no Vercel (plataforma gerencia o runtime); Docker só para dev local se houver serviço extra | N/A | Dockerfile non-root | idem |
-| `docker compose up` local | `supabase start` + `npm run dev` | idem | compose | compose |
-| CI com `dotnet test` | GitHub Actions: `npm ci`, `lint`, `typecheck`, `build`, testes; Vercel faz deploy de preview por PR | idem | idem | idem |
-| LocalDB/Visual Studio | N/A (motivo: não é .NET/SQL Server) | N/A | N/A | N/A |
+| `[Authorize]` on mutation routes | Check the session on the server (`supabase.auth.getUser()` in Route Handler/Server Action/middleware) **and** RLS on the table | **RLS + policies** with `auth.uid()`; Edge Functions validate the JWT | auth hook/guard per route | auth `Depends()` per route |
+| Filter by `UserId`/`TenantId` from claims (BOLA) | Policy `using (auth.uid() = user_id)`; never trust an id from the body | same | `where user_id = req.user.id` | same |
+| Immutable DTO, no mass assignment | Zod schema on the Server Action/Route Handler input; `insert` only allowed fields | Policy `with check` + columns with restricted `grant` | Zod/class-validator | Pydantic |
+| EF Core migrations | `supabase migration new` + `supabase db push`; types with `supabase gen types` | same | Prisma/Drizzle migrations | Alembic |
+| Testcontainers + real PostgreSQL | `supabase start` (local Postgres/Auth) + integration tests (Vitest) against it; `supabase test db` (pgTAP) for policies | same | Testcontainers for Node or Postgres in Docker | pytest + Postgres in Docker |
+| `WebApplicationFactory` (API test) | Call Route Handlers with `fetch` against local `next dev`/`next start`, or test the function with a real request | Call local Supabase with two real users | `fastify.inject` / supertest | `TestClient` |
+| SignalR (real time) | Supabase Realtime (channel authorized by RLS) | same | WebSocket/SSE with auth | WebSocket with auth |
+| `ProblemDetails` without leaking stack traces | Standard error response; `error.tsx`; never send the database `error.message` to the client | Error messages mapped in the client | global error handler | exception handler |
+| Native `RateLimiter` | Rate limit in middleware/edge or a KV service; Supabase Auth limits configured | Supabase Auth limits + Edge Function | `@fastify/rate-limit` | `slowapi` |
+| Secrets in `appsettings`/User Secrets | Vercel environment variables per environment (Development/Preview/Production); `NEXT_PUBLIC_*` **only** for public values | `VITE_*` is public: only the URL and the `anon`/publishable key | `.env` + secret store | same |
+| Chiseled non-root Dockerfile | N/A on Vercel (the platform manages the runtime); Docker only for local dev if there is an extra service | N/A | non-root Dockerfile | same |
+| Local `docker compose up` | `supabase start` + `npm run dev` | same | compose | compose |
+| CI with `dotnet test` | GitHub Actions: `npm ci`, `lint`, `typecheck`, `build`, tests; Vercel deploys a preview per PR | same | same | same |
+| LocalDB/Visual Studio | N/A (reason: not .NET/SQL Server) | N/A | N/A | N/A |
 
-## Supabase: armadilhas que contam como falha de segurança
+## Supabase: pitfalls that count as security failures
 
-- Tabela em schema exposto (`public`) **sem RLS habilitado** = dados abertos para qualquer portador da `anon key`.
-- Policy `using (true)` em tabela com dado de usuário.
-- `service_role`/secret key em qualquer arquivo que vá ao browser, ou em variável `NEXT_PUBLIC_*`/`VITE_*`.
-- Função `security definer` sem `set search_path = ''` (ou schema fixo).
-- Bucket de Storage público com arquivos privados; policies de `storage.objects` ausentes.
-- URLs de redirecionamento do Auth abertas (`*`) em produção.
-- Confiar em `user_metadata` (editável pelo usuário) para autorização; use `app_metadata` ou tabela própria de papéis.
+- A table in an exposed schema (`public`) **without RLS enabled** = data open to anyone holding the `anon` key.
+- Policy `using (true)` on a table with user data.
+- `service_role`/secret key in any file that reaches the browser, or in a `NEXT_PUBLIC_*`/`VITE_*` variable.
+- `security definer` function without `set search_path = ''` (or a fixed schema).
+- Public Storage bucket with private files; missing `storage.objects` policies.
+- Open Auth redirect URLs (`*`) in production.
+- Trusting `user_metadata` (user-editable) for authorization; use `app_metadata` or an own roles table.
 
-## Vercel: armadilhas comuns
+## Vercel: common pitfalls
 
-- Variável sensível marcada para o ambiente errado ou exposta com prefixo `NEXT_PUBLIC_`.
-- Rota de cron pública (sem segredo no header).
-- Função que excede o tempo máximo do plano em trabalho longo (use lotes/fila).
-- Headers de segurança ausentes (`Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Strict-Transport-Security`) — configure em `next.config` ou `vercel.json`.
-- Preview deployments públicos com dados reais de produção: use projeto/banco separado para preview ou proteja o preview.
+- Sensitive variable set for the wrong environment or exposed with a `NEXT_PUBLIC_` prefix.
+- Public cron route (no secret in the header).
+- Function exceeding the plan's maximum duration on long work (use batches/queues).
+- Missing security headers (`Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Strict-Transport-Security`) — configure them in `next.config` or `vercel.json`.
+- Public preview deployments with real production data: use a separate project/database for previews or protect them.

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Instala o Squad para o Claude Code (skills, agentes e servidor MCP opcional).
+"""Installs the Squad for Claude Code (skills, agents and the optional MCP server).
 
-Uso:
-  python install_claude.py --project C:/Projetos/MinhaApp   # .claude/ dentro do projeto
-  python install_claude.py --global                         # ~/.claude/
-Opções:
-  --with-heavy-skills   inclui design-taste-frontend (taste-skill, MIT) e playwright-cli (~60 MB)
-  --register-mcp        executa `claude mcp add` (escopo local ao projeto; só vale com --project)
-Sem dependências externas. Os agentes são convertidos para o formato do Claude Code e só são
-acionados quando a skill squad os chama (a descrição de cada um diz isso).
+Usage:
+  python install_claude.py --project /path/to/your-app   # .claude/ inside the project
+  python install_claude.py --global                      # ~/.claude/
+Options:
+  --with-heavy-skills   also installs design-taste-frontend (taste-skill, MIT) and playwright-cli (~60 MB)
+  --register-mcp        runs `claude mcp add` (scope local to the project; only with --project)
+No external dependencies. Agents are converted to the Claude Code format and only run when the
+squad skill calls them (each description says so).
 """
 from __future__ import annotations
 
@@ -22,22 +22,20 @@ SRC = Path(__file__).resolve().parent / "squad-kit"
 LIGHT_SKILLS = ["squad", "product-research", "product-brand-design", "quality-validation",
                 "security-validation", "frontend-integration", "design-reference", "spatial-design"]
 HEAVY_SKILLS = ["design-taste-frontend", "playwright-cli"]
-# Nome antigo da cópia duplicada da taste-skill, removida do repositório em 2026-11-27.
-LEGACY_SKILLS = ["taste-skill"]
 DROP_KEYS = ("subagent:", "mainAgent:", "inheritCustomizations:", "commandExecutionPolicy:")
-PREFIX = "[squad] Use SOMENTE quando a skill squad chamar este agente pelo nome. "
+PREFIX = "[squad] Use ONLY when the squad skill calls this agent by name. "
 
 
 def convert_agent(text: str, installed_skills: set[str] | None = None) -> str:
-    """Converte o frontmatter do Antigravity para o Claude Code.
+    """Converts the Antigravity frontmatter to Claude Code.
 
-    O Claude Code n\u00e3o entende a chave `skills:` dos agentes; em vez de descart\u00e1-la, ela vira
-    uma instru\u00e7\u00e3o no corpo apontando para o SKILL.md instalado de cada skill.
+    Claude Code does not understand the agents' `skills:` key; instead of dropping it, it becomes
+    an instruction in the body pointing at each installed skill's SKILL.md.
     """
-    text = text.lstrip("\ufeff").replace("\r\n", "\n")
+    text = text.lstrip("﻿").replace("\r\n", "\n")
     if not text.startswith("---"):
         return text
-    head, sep, body = text[3:].partition("\n---")
+    head, _, body = text[3:].partition("\n---")
     out, skills, in_skills = [], [], False
     for line in head.splitlines():
         if in_skills and (line.startswith(" ") or line.startswith("-")):
@@ -57,14 +55,15 @@ def convert_agent(text: str, installed_skills: set[str] | None = None) -> str:
     if skills:
         available = [s for s in skills if installed_skills is None or s in installed_skills]
         missing = [s for s in skills if s not in available]
-        note = "\n\n> **Skills deste agente:** antes de agir, leia " + ", ".join(
-            f"`.claude/skills/{s}/SKILL.md`" for s in available) + " (procure em `~/.claude/skills/` se n\u00e3o estiver no projeto)."
-        if missing:
-            note += f" N\u00e3o instaladas nesta m\u00e1quina (instale com `--with-heavy-skills` se precisar): {', '.join(missing)}."
-        if not available:
-            note = f"\n\n> **Skills deste agente n\u00e3o instaladas:** {', '.join(missing)} (use `--with-heavy-skills`)."
-        body = body.split("\n", 1)
-        body = body[0] + note + "\n\n" + (body[1] if len(body) > 1 else "").lstrip("\n")
+        if available:
+            note = "\n\n> **Skills for this agent:** before acting, read " + ", ".join(
+                f"`.claude/skills/{s}/SKILL.md`" for s in available) + " (look in `~/.claude/skills/` if it is not in the project)."
+            if missing:
+                note += f" Not installed on this machine (install with `--with-heavy-skills` if needed): {', '.join(missing)}."
+        else:
+            note = f"\n\n> **Skills for this agent not installed:** {', '.join(missing)} (use `--with-heavy-skills`)."
+        first, _, rest = body.partition("\n")
+        body = first + note + "\n\n" + rest.lstrip("\n")
     return "---" + "\n".join(out) + "\n---" + body
 
 
@@ -73,27 +72,36 @@ def _yaml_quote(value: str) -> str:
 
 
 def copy_tree(src: Path, dst: Path) -> None:
-    shutil.copytree(src, dst, dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    shutil.copytree(src, dst, dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "node_modules"))
+
+
+def ensure_gitignore(project: Path) -> None:
+    gi = project / ".gitignore"
+    current = gi.read_text(encoding="utf-8", errors="ignore") if gi.is_file() else ""
+    if ".squad/" not in current.splitlines():
+        with open(gi, "a", encoding="utf-8", newline="\n") as fh:
+            fh.write(("\n" if current and not current.endswith("\n") else "") + "\n# Squad artifacts\n.squad/\n")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     where = ap.add_mutually_exclusive_group(required=True)
-    where.add_argument("--project", help="raiz do projeto-alvo")
-    where.add_argument("--global", dest="is_global", action="store_true", help="instala em ~/.claude")
+    where.add_argument("--project", help="target project root")
+    where.add_argument("--global", dest="is_global", action="store_true", help="install into ~/.claude")
     ap.add_argument("--with-heavy-skills", action="store_true")
     ap.add_argument("--register-mcp", action="store_true")
     args = ap.parse_args()
 
     if not SRC.is_dir():
-        print(f"Pasta fonte não encontrada: {SRC}", file=sys.stderr)
+        print(f"Source folder not found: {SRC}", file=sys.stderr)
         return 1
     if args.is_global:
         base = Path.home() / ".claude"
+        proj = None
     else:
         proj = Path(args.project).expanduser().resolve()
         if not proj.is_dir():
-            print(f"Projeto não encontrado: {proj}", file=sys.stderr)
+            print(f"Project not found: {proj}", file=sys.stderr)
             return 1
         base = proj / ".claude"
 
@@ -103,7 +111,7 @@ def main() -> int:
             copy_tree(SRC / "skills" / name, base / "skills" / name)
     rules = SRC / "rules" / "squad-context.md"
     if rules.is_file():
-        shutil.copyfile(rules, base / "skills" / "squad" / "references" / "squad-rules.md")
+        shutil.copyfile(rules, base / "skills" / "squad" / "references" / "rules.md")
 
     (base / "agents").mkdir(parents=True, exist_ok=True)
     for agent in sorted((SRC / "agents").glob("*.md")):
@@ -114,27 +122,19 @@ def main() -> int:
     shutil.copyfile(SRC / "mcp" / "server.py", base / "mcp" / "server.py")
     server = (base / "mcp" / "server.py").as_posix()
 
-    if not args.is_global:
-        gi = proj / ".gitignore"
-        current = gi.read_text(encoding="utf-8", errors="ignore") if gi.is_file() else ""
-        if ".squad/" not in current.splitlines():
-            with open(gi, "a", encoding="utf-8", newline="\n") as fh:
-                fh.write(("\n" if current and not current.endswith("\n") else "") + "\n# Squad artifacts\n.squad/\n")
+    if proj is not None:
+        ensure_gitignore(proj)
 
-    print(f"Skills ({len(skills)}), agentes e servidor MCP instalados em {base}")
-    for legacy in LEGACY_SKILLS:
-        if (base / "skills" / legacy).is_dir():
-            print(f"Aviso: '{base / 'skills' / legacy}' é uma cópia antiga e duplicada de design-taste-frontend. "
-                  "Ela não é mais usada; apague a pasta quando quiser liberar espaço.")
+    print(f"Skills ({len(skills)}), agents and MCP server installed in {base}")
     cmd = ["claude", "mcp", "add", "squad", "--scope", "local", "--", sys.executable, server]
-    if args.register_mcp and not args.is_global:
+    if args.register_mcp and proj is not None:
         if shutil.which("claude"):
             subprocess.run(cmd, cwd=str(proj), check=False)
         else:
-            print("`claude` não está no PATH; rode manualmente o comando abaixo.")
-    print("\nO MCP é opcional e NÃO foi registrado globalmente. Para ativá-lo só no projeto que precisar, rode dentro dele:")
+            print("`claude` is not on PATH; run the command below by hand.")
+    print("\nThe MCP is optional and was NOT registered globally. To enable it only in the project that needs it, run inside it:")
     print("  " + " ".join(f'"{c}"' if " " in c else c for c in cmd))
-    print("\nUse: /squad <seu pedido>  ou  \"use a skill squad e crie ...\"")
+    print('\nUse: /squad <your request>  or  "use the squad skill and build ..."  (any language)')
     return 0
 
 

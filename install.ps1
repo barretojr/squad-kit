@@ -4,13 +4,14 @@ param(
     [switch]$Global
 )
 
+# Installs the Squad for Antigravity (.agents/ in a project, or ~/.gemini/config globally).
 $ErrorActionPreference = 'Stop'
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SourceDir = Join-Path $ScriptDir 'squad-kit'
 $Kinds = @('agents', 'rules', 'skills', 'commands', 'mcp')
 
 if (-not (Test-Path -LiteralPath $SourceDir -PathType Container)) {
-    throw "Pasta fonte 'squad-kit' não encontrada em: $ScriptDir"
+    throw "Source folder 'squad-kit' not found in: $ScriptDir"
 }
 
 function Copy-SquadTo {
@@ -23,10 +24,8 @@ function Copy-SquadTo {
             Copy-Item -Path (Join-Path $From '*') -Destination $To -Recurse -Force
         }
     }
-    $SkillDir = Join-Path $DestinationRoot 'skills\squad'
-    New-Item -ItemType Directory -Path $SkillDir -Force | Out-Null
-    Copy-Item -LiteralPath (Join-Path $SourceDir 'skills\squad\SKILL.md') -Destination $SkillDir -Force
-    Copy-Item -Path (Join-Path $SourceDir 'skills\squad\templates\*') -Destination (Join-Path $SkillDir 'templates') -Recurse -Force
+    # The squad skill reads its rules from references/rules.md
+    Copy-Item -LiteralPath (Join-Path $SourceDir 'rules\squad-context.md') -Destination (Join-Path $DestinationRoot 'skills\squad\references\rules.md') -Force
 }
 
 function Copy-ToGlobalConfig {
@@ -36,7 +35,8 @@ function Copy-ToGlobalConfig {
     $GlobalSkillsDir = Join-Path $HOME '.gemini\antigravity-cli\skills'
     New-Item -ItemType Directory -Path $GlobalSkillsDir -Force | Out-Null
     Copy-Item -Path (Join-Path $SourceDir 'skills\*') -Destination $GlobalSkillsDir -Recurse -Force
-    Write-Host "Squad e skills instalados globalmente em $ConfigDir e $GlobalSkillsDir." -ForegroundColor Green
+    Copy-Item -LiteralPath (Join-Path $SourceDir 'rules\squad-context.md') -Destination (Join-Path $GlobalSkillsDir 'squad\references\rules.md') -Force
+    Write-Host "Squad and skills installed globally in $ConfigDir and $GlobalSkillsDir." -ForegroundColor Green
     Write-Host "MCP server: python `"$(Join-Path $ConfigDir 'mcp\server.py')`" (stdio)"
 }
 
@@ -46,36 +46,34 @@ if ($Global) {
 }
 
 if ([string]::IsNullOrWhiteSpace($TargetProject)) {
-    Write-Host '1) Instalar no diretório atual'
-    Write-Host '2) Informar outro projeto'
-    Write-Host '3) Instalar globalmente'
-    Write-Host 'q) Cancelar'
-    $Choice = Read-Host 'Opção'
+    Write-Host '1) Install into the current folder'
+    Write-Host '2) Enter another project'
+    Write-Host '3) Install globally'
+    Write-Host 'q) Cancel'
+    $Choice = Read-Host 'Option'
     switch ($Choice) {
         '1' { $TargetProject = (Get-Location).Path }
-        '2' { $TargetProject = Read-Host 'Raiz do projeto' }
+        '2' { $TargetProject = Read-Host 'Project root' }
         '3' { Copy-ToGlobalConfig; exit 0 }
-        default { Write-Host 'Cancelado.'; exit 0 }
+        default { Write-Host 'Cancelled.'; exit 0 }
     }
 }
 
 if (-not (Test-Path -LiteralPath $TargetProject -PathType Container)) {
-    throw "Diretório de projeto não encontrado: $TargetProject"
+    throw "Project folder not found: $TargetProject"
 }
 $DestDir = Join-Path $TargetProject '.agents'
 New-Item -ItemType Directory -Path $DestDir -Force | Out-Null
 Copy-SquadTo -DestinationRoot $DestDir
 
-# Garante .squad/ no .gitignore do projeto
+# Make sure .squad/ is in the project's .gitignore
 $GitIgnorePath = Join-Path $TargetProject '.gitignore'
-if (Test-Path -LiteralPath $GitIgnorePath) {
-    $GitIgnoreContent = Get-Content -LiteralPath $GitIgnorePath -Raw
-    if ($GitIgnoreContent -notmatch '\.squad') {
-        Add-Content -LiteralPath $GitIgnorePath -Value "`n# Squad artifacts`n.squad/`n.agentes/"
-        Write-Host "Adicionado .squad/ ao .gitignore de $TargetProject" -ForegroundColor Cyan
-    }
+$GitIgnoreContent = if (Test-Path -LiteralPath $GitIgnorePath) { Get-Content -LiteralPath $GitIgnorePath -Raw } else { '' }
+if ($GitIgnoreContent -notmatch '(?m)^\.squad/?\s*$') {
+    Add-Content -LiteralPath $GitIgnorePath -Value "`n# Squad artifacts`n.squad/" -Encoding utf8
+    Write-Host "Added .squad/ to $GitIgnorePath" -ForegroundColor Cyan
 }
 
-Write-Host "Squad instalado no workspace: $DestDir" -ForegroundColor Green
-Write-Host 'Reabra ou recarregue o Antigravity e invoque /squad.'
+Write-Host "Squad installed in the workspace: $DestDir" -ForegroundColor Green
+Write-Host 'Reopen or reload Antigravity and run /squad.'
 Write-Host "MCP server: python `"$(Join-Path $DestDir 'mcp\server.py')`" (stdio)"

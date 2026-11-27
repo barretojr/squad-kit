@@ -1,62 +1,63 @@
-# Stack e decisões do projeto
+# Project stack and decisions
 
-- **Atualizado em:** [data]
-- **Modo:** [lite | full | audit]
-- **Tipo de projeto:** [greenfield | brownfield]
+- **Updated:** [date]
+- **Language:** [language the user writes in, e.g. English / Português (Brasil)] — used for every answer, report body and UI copy
+- **Mode:** [lite | full | audit]
+- **Project type:** [greenfield | brownfield]
 
-## Produto
+## Product
 
-- **Objetivo:** [uma frase]
-- **Usuários e acesso:** [privado/público; um usuário ou vários; papéis]
-- **Fora do MVP:** [3 itens]
+- **Goal:** [one sentence]
+- **Users and access:** [private/public; one user or many; roles]
+- **Out of the MVP:** [3 items]
 
 ## Stack
 
-| Camada | Escolha | Motivo / quem decidiu |
+| Layer | Choice | Reason / who decided |
 |---|---|---|
-| Backend | [.NET / Node-TS / Python / sem backend] | [usuário / squad] |
-| Frontend | [React+Vite / Next / outro] | |
-| Banco | [PostgreSQL / Supabase / SQL Server / SQLite] | |
-| Autenticação | [Identity-JWT / Supabase Auth / social / sem login] | |
+| Backend | [.NET / Node-TS / Python / no backend] | [user / squad] |
+| Frontend | [React+Vite / Next / other] | |
+| Database | [PostgreSQL / Supabase / SQL Server / SQLite] | |
+| Authentication | [Identity-JWT / Supabase Auth / social / no login] | |
 | Migrations | [EF Core / Prisma / Alembic / Supabase CLI] | |
-| Testes | [básico / completo] e ferramentas | |
-| Deploy / ambiente | [Vercel + Supabase cloud / local Docker / nuvem X] | |
-| Jobs em segundo plano | [nenhum / Vercel Cron / pg_cron / Edge Function agendada / worker] e frequência | |
-| Perfil de `stacks.md` | [A–G] e o sinal que levou à escolha | |
+| Tests | [basic / complete] and tools | |
+| Deploy / environment | [Vercel + Supabase cloud / local Docker / cloud X] | |
+| Background jobs | [none / Vercel Cron / pg_cron / scheduled Edge Function / worker] and frequency | |
+| `stacks.md` profile | [A–G] and the signal that led to it | |
 
-## Descoberta (resumo)
+## Discovery (summary)
 
-- Produtos equivalentes: [nomes, link para `.squad/produto/descoberta.md`]
-- Decisões construir × integrar: [capacidade → decisão]
-- Riscos aceitos pelo usuário: [ex.: integração não oficial, custo por uso]
+- Equivalent products: [names, link to `.squad/product/discovery.md`]
+- Build × integrate decisions: [capability → decision]
+- Risks accepted by the user: [e.g. unofficial integration, usage-based cost]
 
-## Deploy (se aplicável)
+## Deploy (if applicable)
 
-- Vercel: projeto [existe/criar] · deploy de preview autorizado: [sim/não] · produção: [usuário aprova] · domínio: [...]
-- Supabase: projetos [dev/preview] e [produção] separados: [sim/não] · `db push` em produção autorizado: [sim/não]
-- Variáveis de ambiente por ambiente: [lista de nomes, sem valores]
+- Vercel: project [exists/create] · preview deploy authorized: [yes/no] · production: [user approves] · domain: [...]
+- Supabase: separate [dev/preview] and [production] projects: [yes/no] · production `db push` authorized: [yes/no]
+- Environment variables per environment: [list of names, no values]
 
-## Supabase (se aplicável)
+## Supabase (if applicable)
 
-- Projeto existente: [sim/não]. URL e `anon key` via `.env`: [sim/não]. `service_role` somente no servidor.
-- Acesso aos dados: [direto do frontend com RLS / via API própria]
-- Auth: [Supabase Auth / própria] · Storage/Realtime/Edge Functions: [quais]
-- Dev local: [`supabase start` / projeto na nuvem]
+- Existing project: [yes/no]. URL and `anon` key through `.env`: [yes/no]. `service_role` only on the server.
+- Data access: [straight from the frontend with RLS / through an own API]
+- Auth: [Supabase Auth / own] · Storage/Realtime/Edge Functions: [which]
+- Local dev: [`supabase start` / cloud project]
 
-## Integrações externas
+## External integrations
 
-| Serviço | Credencial disponível? | Sandbox? | Observações |
+| Service | Credential available? | Sandbox? | Notes |
 |---|---|---|---|
-| [nome] | [sim/não] | [sim/não] | |
+| [name] | [yes/no] | [yes/no] | |
 
-## Comandos do projeto (preencher conforme existirem)
+## Project commands (fill in as they exist)
 
 - Build: `[...]`
-- Testes unitários: `[...]`
-- Testes de integração: `[...]`
+- Unit tests: `[...]`
+- Integration tests: `[...]`
 - E2E: `[...]`
-- Rodar local: `[...]`
+- Run locally: `[...]`
 
-## O que depende do usuário
+## What depends on the user
 
-- [chaves, contas, aprovações, domínio/DNS...]
+- [keys, accounts, approvals, domain/DNS...]

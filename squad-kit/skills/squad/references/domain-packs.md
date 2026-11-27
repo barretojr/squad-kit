@@ -1,20 +1,22 @@
 # Domain packs
 
-A skill `squad` não contém conhecimento de nicho. Quando um tipo de negócio se repete, crie um **domain pack** à parte (ex.: `skills/<nome-do-dominio>/SKILL.md`) e deixe o squad apenas apontar para ele.
+The `squad` skill holds no niche knowledge. When a business type keeps coming back, create a separate **domain pack** (e.g. `skills/<domain-name>/SKILL.md`) and let the squad just point to it.
 
-Um domain pack contém só o que é específico do nicho:
+A domain pack contains only what is specific to the niche:
 
-- glossário e fluxos principais do negócio;
-- modelo de dados de partida (entidades e relações);
-- integrações típicas, com links oficiais e restrições de uso;
-- regras de negócio e armadilhas conhecidas (políticas das plataformas, consentimento, limites);
-- fatias verticais sugeridas e perguntas extras para a entrevista;
-- (opcional) trechos de scaffold.
+- glossary and main business flows;
+- starting data model (entities and relations);
+- typical integrations, with official links and usage constraints;
+- business rules and known pitfalls (platform policies, consent, limits);
+- suggested vertical slices and extra interview questions;
+- (optional) scaffold snippets.
 
-Como o squad usa:
+How the squad uses it:
 
-1. Se o usuário citar um domain pack (ou ele já estiver instalado e o pedido for claramente daquele nicho), leia-o depois da entrevista genérica e **acrescente** as perguntas extras dele ao mesmo bloco.
-2. As decisões continuam registradas em `.squad/stack.md` e no roadmap.
-3. Se não houver pack, o `@PM` pesquisa o domínio a partir da descrição do usuário. Nunca assuma um nicho.
+1. If the user names a domain pack (or it is installed and the request clearly belongs to that niche), read it after the generic interview and **add** its extra questions to the same block.
+2. Decisions are still recorded in `.squad/stack.md` and the roadmap.
+3. Without a pack, `@PM` researches the domain from the user's description. Never assume a niche.
 
-Regra de higiene: se alguma regra, template ou ferramenta do squad mencionar um nicho específico, ela está no lugar errado; mova para o pack.
+Hygiene rule: if a squad rule, template or tool mentions a specific niche, it is in the wrong place; move it to a pack.
+
+Contributions: domain packs are a good first PR. Use the "Domain pack" issue template and follow `CONTRIBUTING.md`.

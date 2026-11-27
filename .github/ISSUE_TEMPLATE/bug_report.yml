@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in the squad, an agent, the MCP server or an installer does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting! English or Portuguese is fine. Do not paste secrets, tokens or customer data.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [squad skill / flow, agent profile, MCP server, installer (Claude Code), installer (Antigravity), docs, other]
+    validations:
+      required: true
+  - type: dropdown
+    id: host
+    attributes:
+      label: Host
+      options: [Claude Code, Antigravity, other]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The request you gave the squad, the command you ran, or the MCP call (tool + arguments).
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Output / evidence
+      description: Error text, the relevant part of a `.squad/` report, or the MCP JSON response.
+      render: text
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: OS, Python version, MCP `serverInfo.version`, stack of the target project.

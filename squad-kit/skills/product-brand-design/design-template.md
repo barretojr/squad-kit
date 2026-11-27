@@ -1,27 +1,33 @@
-# Modelo de direção visual e marca
+# Visual direction and brand template
 
-# Direção visual e marca — <produto>
+> Saved as `.squad/design/visual-direction.md`. Keep the base report headings created by `initialize_squad_docs` and the required `## User language and anti-jargon`; the other sections are recommended.
 
-- **Status:** PLANEJADO / atualizado YYYY-MM-DD
-- **Usuários e tarefa principal:**
-- **Plataformas/viewports:**
+# Visual direction and brand — <product>
 
-## Referências e leitura crítica
+- **Status:** PLANNED / updated YYYY-MM-DD
+- **Users and main task:**
+- **Platforms/viewports:**
 
-Padrões vistos nas fontes, o que adaptar e o que evitar para este produto.
+## References and critical reading
 
-## Conceitos de marca
+Patterns seen in the sources, what to adapt and what to avoid for this product.
 
-Para pelo menos duas opções: nome/wordmark, ideia do símbolo, metáfora, paleta/tipo iniciais, uso pequeno/claro/escuro, pontos fortes/limites. Recomendar uma e explicar por quê. Conceitos são originais e não imitam marcas existentes.
+## Brand concepts
 
-## Direção visual recomendada
+For at least two options: name/wordmark, symbol idea, metaphor, initial palette/type, small/light/dark usage, strengths/limits. Recommend one and explain why. Concepts are original and never imitate existing brands.
 
-Hierarquia, layout, tokens, tipo, cor semântica, densidade de dados, interação/motion justificada, acessibilidade e comportamento responsivo.
+## Recommended visual direction
 
-## Fluxos e estados
+Hierarchy, layout, tokens, type, semantic color, data density, justified interaction/motion, accessibility and responsive behavior.
 
-Inclua login/recuperação quando app privado; listar loading, empty, error, success e sessão expirada por fluxo.
+## User language and anti-jargon
 
-## O que foi feito / validação / pendências
+UI vocabulary about the user's domain and journey; no tech jargon or fake metrics.
 
-No planejamento, não alegue implementação. Após escolha, atualizar com assets/componentes implementados e inspeção visual real.
+## Flows and states
+
+Include login/recovery for private apps; list loading, empty, error, success and expired session per flow.
+
+## What was done / validation / open items
+
+During planning, never claim implementation. After the choice, update with the implemented assets/components and a real visual inspection.

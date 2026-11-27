@@ -1,59 +1,59 @@
-# Entrevista inicial (intake)
+# Initial interview (intake)
 
-Objetivo: decidir, com o mínimo de perguntas, tudo que muda materialmente a aplicação. **Uma rodada**, em bloco. Pule o que o prompt ou o projeto já respondem. Cada pergunta traz uma opção recomendada e a saída "outro / decida você".
+Goal: decide, with as few questions as possible, everything that materially changes the application. **One round**, as a block. Skip what the request or the project already answers. Each question has a recommended option and an "other / you decide" way out. Ask in the user's language (see "Language" in `SKILL.md`).
 
-No Claude Code use `AskUserQuestion` (até 4 perguntas por chamada; agrupe por tema e faça mais de uma chamada se precisar). No Antigravity, use uma lista numerada curta.
+In Claude Code use `AskUserQuestion` (up to 4 questions per call; group by theme and make more than one call if needed). In Antigravity, use a short numbered list.
 
-Antes das perguntas, mostre o resumo da descoberta (`references/discovery.md`, 3 a 5 linhas) e inclua as até duas perguntas de "construir × integrar" que ela gerou. Elas têm prioridade sobre as perguntas genéricas abaixo, porque mudam a arquitetura.
+Before the questions, show the discovery summary (`references/discovery.md`, 3 to 5 lines) and include the up to two "build × integrate" questions it produced. They take priority over the generic questions below because they change the architecture.
 
-Orçamento de perguntas: **no máximo 8** na rodada principal. Se passar disso, corte as de menor impacto e decida-as você (registrando como "decidido pelo squad").
+Question budget: **at most 8** in the main round. Beyond that, cut the lowest-impact ones and decide them yourself (recorded as "decided by the squad").
 
-## Bloco 1 — Produto (só se o pedido for vago)
+## Block 1 — Product (only if the request is vague)
 
-- Qual é o resultado principal para o usuário final e quem usa? (uma frase)
-- É app privado (login) ou público? Um usuário ou vários (multi-tenant/equipe)?
-- O que deve ficar **fora** do MVP? (se não disser, o Arquiteto propõe 3 cortes)
+- What is the main outcome for the end user, and who uses it? (one sentence)
+- Private app (login) or public? One user or many (multi-tenant/team)?
+- What must stay **out** of the MVP? (if not said, the Architect proposes 3 cuts)
 
-## Bloco 2 — Stack
+## Block 2 — Stack
 
-- **Backend:** .NET (C#) · Node/TypeScript · Python (FastAPI) · sem backend próprio (BaaS, ex.: Supabase) · outro.
-- **Frontend:** React + TypeScript + Vite · Next.js · outro · sem frontend (API apenas).
-- Recomendação quando o usuário diz "decida": use a tabela "Qual perfil recomendar" de `references/stacks.md`. Sem nenhum sinal, para web app/SaaS recomende o **perfil G (Next.js + Supabase no Vercel)**; se o usuário tiver familiaridade com uma linguagem, prefira-a.
-- Uma pergunta combinada costuma bastar: "Stack: Next.js + Supabase no Vercel (recomendado) · .NET + React + PostgreSQL · Python + React · outra".
+- **Backend:** .NET (C#) · Node/TypeScript · Python (FastAPI) · no own backend (BaaS, e.g. Supabase) · other.
+- **Frontend:** React + TypeScript + Vite · Next.js · other · no frontend (API only).
+- Recommendation when the user says "you decide": use the "Which profile to recommend" table in `references/stacks.md`. With no signal at all, for a web app/SaaS recommend **profile G (Next.js + Supabase on Vercel)**; if the user is fluent in a language, prefer it.
+- A single combined question is usually enough: "Stack: Next.js + Supabase on Vercel (recommended) · .NET + React + PostgreSQL · Python + React · other".
 
-## Bloco 3 — Banco de dados
+## Block 3 — Database
 
-- **PostgreSQL próprio** (Docker local; migrations pelo ORM) · **Supabase** (Postgres gerenciado + Auth/Storage/Realtime) · SQL Server · SQLite (protótipo local) · outro.
-- Se escolher **Supabase**, perguntar (follow-up permitido):
-  1. Já existe um projeto Supabase? Pode informar URL e `anon key` por `.env` (nunca a `service_role` no chat; ela fica só no servidor).
-  2. Usar **Supabase Auth** ou autenticação própria?
-  3. O acesso aos dados será **direto do frontend com RLS** (sem backend próprio) ou **via API própria** que usa o Postgres do Supabase?
-  4. Precisa de Storage, Realtime ou Edge Functions?
-  5. Desenvolvimento local com `supabase start` (Docker) ou direto no projeto na nuvem?
-- Se escolher **PostgreSQL/SQL Server próprio**: já tem instância ou sobe via Docker Compose? Qual versão?
+- **Own PostgreSQL** (local Docker; ORM migrations) · **Supabase** (managed Postgres + Auth/Storage/Realtime) · SQL Server · SQLite (local prototype) · other.
+- If **Supabase** (follow-up allowed):
+  1. Is there an existing Supabase project? URL and `anon`/publishable key go through `.env` (never the `service_role`/secret key in chat; it stays on the server only).
+  2. **Supabase Auth** or own authentication?
+  3. Data access **straight from the frontend with RLS** (no own backend) or **through an own API** that uses Supabase's Postgres?
+  4. Storage, Realtime or Edge Functions needed?
+  5. Local development with `supabase start` (Docker) or directly against the cloud project?
+- If **own PostgreSQL/SQL Server**: existing instance or Docker Compose? Which version?
 
-## Bloco 4 — Autenticação e acesso
+## Block 4 — Authentication and access
 
-- E-mail + senha · login social (qual provedor) · link mágico · Supabase Auth · sem login.
-- Papéis/permissões? (ex.: admin e usuário comum)
-- Recuperação de senha e verificação de e-mail são necessárias?
+- Email + password · social login (which provider) · magic link · Supabase Auth · no login.
+- Roles/permissions? (e.g. admin and regular user)
+- Password recovery and email verification needed?
 
-## Bloco 5 — Integrações externas
+## Block 5 — External integrations
 
-- Quais serviços externos o produto precisa consumir ou acionar? (lista livre; pode ser nenhuma)
-- Para cada um: já tem conta/credenciais/aprovação? Existe ambiente de teste (sandbox)?
-- Regra: sem credencial o app sobe com estado vazio e aviso de configuração. O Arquiteto registra no roadmap o que depende do usuário.
-- Há tarefas em segundo plano (agendadas, filas, webhooks)? Tempo real?
+- Which external services must the product consume or trigger? (free list; may be none)
+- For each: account/credentials/approval already in place? Is there a sandbox?
+- Rule: without credentials the app starts with an empty state and a configuration notice. The Architect records in the roadmap what depends on the user.
+- Background work (scheduled jobs, queues, webhooks)? Real time?
 
-## Bloco 6 — Execução e qualidade
+## Block 6 — Runtime and quality
 
-- **Onde roda:** Vercel (frontend/API) + Supabase cloud · local (Docker) · outra nuvem (qual?) · ainda não sei. Windows, Linux ou ambos?
-- Se **Vercel**: já tem conta/time e projeto? O squad pode fazer deploy de **preview** ao final (exige `vercel login` feito por você)? Produção fica para você aprovar depois. Domínio próprio?
-- Se **Supabase cloud**: projeto separado para desenvolvimento/preview e produção? (recomendado: sim)
-- **Rotina em segundo plano:** precisa rodar algo sozinho (coleta, envio, relatório)? Com que frequência? (define Vercel Cron × `pg_cron`/Edge Function; ver `references/integrations.md`)
-- **Nível de testes:** básico (build + unitários) · completo (+ integração com banco real + E2E no browser). Recomendado: completo para o fluxo principal.
-- **Design:** referência visual desejada (marcas do catálogo `get_design_reference`), idioma da interface, existência de marca/logo.
+- **Where it runs:** Vercel (frontend/API) + Supabase cloud · local (Docker) · another cloud (which?) · not sure yet. Windows, Linux or both?
+- If **Vercel**: existing account/team and project? May the squad make a **preview** deploy at the end (requires your own `vercel login`)? Production stays for you to approve later. Custom domain?
+- If **Supabase cloud**: separate projects for development/preview and production? (recommended: yes)
+- **Background routine:** does something need to run by itself (collection, sending, reports)? How often? (decides Vercel Cron × `pg_cron`/Edge Function; see `references/integrations.md`)
+- **Test level:** basic (build + unit) · complete (+ integration with a real database + browser E2E). Recommended: complete for the main flow.
+- **Design:** desired visual reference (brands in the `get_design_reference` catalog), UI language, existing brand/logo.
 
-## Como registrar
+## How to record
 
-Preencha `.squad/stack.md` a partir de `templates/stack.template.md`, com a escolha, o motivo e o que ficou "decidido pelo squad". Mostre ao usuário um resumo de 5 a 8 linhas e siga. Só volte a perguntar se uma resposta criar uma dependência nova.
+Fill `.squad/stack.md` from `templates/stack.template.md` with the choice, the reason and what was "decided by the squad". Show the user a 5–8 line summary and continue. Ask again only if an answer creates a new dependency.

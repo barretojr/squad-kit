@@ -1,120 +1,128 @@
 ---
 name: squad
 description: >-
-  Esquadrão de agentes que ENTREVISTA o usuário (stack, banco, Supabase, autenticação,
-  integrações, deploy), planeja e constrói uma aplicação ponta a ponta com evidências reais
-  de build e testes. Use SOMENTE quando o usuário pedir explicitamente esta skill/squad
-  (ex.: "use a skill squad e crie uma aplicação que..."). Não use para perguntas,
-  edições pontuais ou tarefas pequenas.
+  Agent squad that INTERVIEWS the user (stack, database, Supabase, auth, integrations,
+  deploy), plans and builds an application end to end with real build and test evidence.
+  Use ONLY when the user explicitly asks for this skill/squad (e.g. "use the squad skill
+  and build an app that...", "/squad ...", "use a skill squad e crie..."). Do not use for
+  questions, one-off edits or small tasks.
 ---
 
 # Squad
 
-Transforma um pedido como *"use a skill e crie uma aplicação que faça X"* em uma aplicação quase pronta: descoberta do que já existe → entrevista curta → plano enxuto → construção por fatias verticais → verificação com comandos reais e revisores independentes → deploy de preview (se autorizado) → entrega com a lista do que falta configurar.
+Turns a request like *"use the squad and build an app that does X"* into a near-ready application: discovery of what already exists → short interview → lean plan → vertical-slice build → verification with real commands and independent reviewers → preview deploy (if authorized) → delivery with the list of what is left to configure.
 
-A skill é **agnóstica de domínio e de stack**. Nada aqui assume um tipo de negócio, banco ou linguagem: tudo vem da entrevista (`references/intake.md`) e é gravado em `.squad/stack.md`.
+The skill is **domain- and stack-agnostic**. Nothing here assumes a business type, database or language: everything comes from the interview (`references/intake.md`) and is recorded in `.squad/stack.md`.
 
-## Modos
+## Language
 
-| Modo | Quando | Equipe | Fecha com |
+- **Detect the user's language** from the request (or an explicit "in English", "em português", "en français"...). Record it as `Language:` in `.squad/stack.md` and keep it for the whole project unless the user changes it.
+- Everything the user reads is in that language: interview questions, summaries, reports' body text, roadmap, UI copy of the built app (unless the user asks for another UI language), README of the built app, final delivery message.
+- **Fixed contract, always English:** file and folder names under `.squad/`, the `##` headings required by the reports, and status keywords (`PLANNED`, `IN PROGRESS`, `BLOCKED`, `DONE`, `VALIDATED`, `APPROVED`, `REJECTED`, `N/A`). The MCP validators read these; Portuguese status words (`APROVADO`, `REPROVADO`) are also accepted.
+- The skill's own files are in English; that never changes the language you answer in.
+
+## Modes
+
+| Mode | When | Team | Closes with |
 |---|---|---|---|
-| **lite** (padrão para "crie/construa uma aplicação") | App novo ou feature grande, quer resultado rápido | 3 papéis: Arquiteto (`pm`+`coord`), Construtor (`backend`/`frontend`/`dba`/`designer` conforme precisar), Verificador (`qa`+`appsec`) | `run_checks` + `audit_code_delivery` + `audit_security_controls` + revisão independente (`code_critic_blind` e `appsec` como subagentes) + tabela de aceite |
-| **full** | Pedido explícito de "mesa-redonda", produto grande ou auditoria profunda | Os 11 especialistas em paralelo + 2 críticos + `@Finalizer` | Gate independente do `@Finalizer` |
-| **audit** | Projeto existente: diagnosticar, sem construir | Os especialistas relevantes | Roadmap priorizado; espera o usuário escolher itens |
+| **lite** (default for "build/create an app") | New app or large feature, fast result | 3 roles: Architect (`pm`+`coord`), Builder (`backend`/`frontend`/`dba`/`designer` as needed), Verifier (`qa`+`appsec`) | `run_checks` + `audit_code_delivery` + `audit_security_controls` + independent review (`code_critic_blind` and `appsec` as subagents) + acceptance table |
+| **full** | Explicit "round table" request, large product or deep audit | The 11 specialists in parallel + 2 critics + `@Finalizer` | Independent `@Finalizer` gate |
+| **audit** | Existing project: diagnose, do not build | The relevant specialists | Prioritized roadmap; waits for the user to pick items |
 
-Se o usuário não disser o modo, use **lite** para "crie…" e **audit** para "analise/audite…". Diga qual modo escolheu em uma linha.
+If the user does not name a mode, use **lite** for "build/create…" and **audit** for "analyze/audit…". State the chosen mode in one line.
 
-## Compatibilidade de ambiente
+## Host compatibility
 
-- **Antigravity:** subagentes pela ferramenta `invoke_subagent`; agentes em `.agents/agents/`.
-- **Claude Code:** subagentes pela ferramenta `Agent` (os perfis instalados em `.claude/agents/` são os mesmos arquivos de `agents/`); perguntas ao usuário pela ferramenta de perguntas (`AskUserQuestion`).
-- **Sem ferramenta de subagentes:** execute os papéis você mesmo, em sequência, **dizendo explicitamente que não são subagentes independentes**. Nunca apresente papéis simulados como agentes reais.
-- **MCP `squad` é opcional.** Com ele, use `inspect_project`, `run_checks`, `audit_*`, `initialize_squad_docs` etc. Sem ele, faça o equivalente por shell (build/test) e leitura direta, e registre que o MCP não estava disponível.
+- **Antigravity:** subagents through `invoke_subagent`; agents in `.agents/agents/`.
+- **Claude Code:** subagents through the `Agent` tool (profiles installed in `.claude/agents/`); questions through `AskUserQuestion`.
+- **No subagent tool:** run the roles yourself, in sequence, **saying explicitly that they are not independent subagents**. Never present simulated roles as real agents.
+- **The `squad` MCP is optional.** With it, use `inspect_project`, `run_checks`, `audit_*`, `initialize_squad_docs` etc. Without it, do the equivalent through the shell (build/test) and direct reading, and record that the MCP was unavailable.
 
-## Passo 0 — Reconhecimento
+## Step 0 — Reconnaissance
 
-1. Identifique a raiz do projeto. Se `.squad/stack.md` já existe, leia-o e **não repita perguntas já respondidas**.
-2. **Retomada:** se `.squad/coordenacao/roadmap.md` tem itens `EM ANDAMENTO`/`BLOQUEADO`, a sessão anterior foi interrompida. Resuma em 3 linhas onde parou, rode `run_checks` para saber o estado real e continue do primeiro item não concluído (não recomece o plano).
-3. Projeto existente (brownfield): detecte stack, banco, auth e testes (`inspect_project` ou leitura direta) e **preserve** o que existe. Pergunte apenas o que não der para detectar.
-4. Projeto vazio (greenfield): siga para a descoberta e a entrevista.
+1. Find the project root. If `.squad/stack.md` exists, read it and **do not repeat questions already answered**.
+2. **Resume:** if `.squad/coordination/roadmap.md` has `IN PROGRESS`/`BLOCKED` items, the previous session was interrupted. Summarize in 3 lines where it stopped, run `run_checks` to learn the real state and continue from the first unfinished item (do not restart the plan).
+3. Existing project (brownfield): detect stack, database, auth and tests (`inspect_project` or direct reading) and **preserve** what exists. Ask only what cannot be detected.
+4. Empty project (greenfield): go to discovery and the interview.
 
-## Passo 0.5 — Descoberta de mercado
+## Step 0.5 — Market discovery
 
-Siga `references/discovery.md`: 3 a 5 produtos equivalentes, blocos reutilizáveis (APIs oficiais, bibliotecas, templates) e a decisão **construir × integrar × adaptar** para cada capacidade central, com restrições de política/custo (`references/integrations.md`). Grave em `.squad/produto/descoberta.md`. O resultado vira até duas perguntas da entrevista. Sem acesso à web, marque como pendente e siga; nunca invente produtos ou URLs.
+Follow `references/discovery.md`: 3 to 5 equivalent products, reusable building blocks (official APIs, libraries, starters) and a **build × integrate × adapt** decision for each core capability, with policy/cost constraints (`references/integrations.md`). Save to `.squad/product/discovery.md`. The result becomes at most two interview questions. Without web access, mark it pending and move on; never invent products or URLs.
 
-Em ambiente com subagentes, rode a descoberta como subagente `pm` **em paralelo** com o reconhecimento do projeto, para não atrasar a entrevista.
+With a subagent tool, run discovery as a `pm` subagent **in parallel** with reconnaissance so the interview is not delayed.
 
-## Passo 1 — Entrevista (obrigatória antes de construir)
+## Step 1 — Interview (mandatory before building)
 
-Siga `references/intake.md`. Regras:
+Follow `references/intake.md`. Rules:
 
-- **Uma única rodada** de perguntas, em bloco, com uma opção recomendada em cada uma e sempre com a saída "outro/decida você". Use a ferramenta de perguntas do ambiente quando existir; senão, uma lista numerada.
-- **Pule** tudo que o prompt já respondeu ou que o projeto já revela. Pergunte só o que muda materialmente o resultado.
-- Bloco obrigatório: **stack** (backend/frontend), **banco** (PostgreSQL próprio, Supabase, SQL Server, SQLite…), **se já existe projeto/integração com Supabase**, **autenticação**, **integrações externas e credenciais disponíveis**, **deploy/ambiente**, **nível de testes**.
-- Se o usuário disser "decida você", escolha o perfil recomendado em `references/stacks.md`, registre a decisão e o porquê.
-- Máximo de **uma rodada de follow-up**, só para dependências criadas pelas respostas (ex.: "usar Supabase" → "já tem projeto? usar Supabase Auth?").
-- Grave o resultado em `.squad/stack.md` (modelo em `templates/stack.template.md`) e mostre um resumo de 5 a 8 linhas ao usuário.
+- **One single round** of questions, as a block, each with a recommended option and always an "other / you decide" way out. Use the host's question tool when available; otherwise a short numbered list.
+- **Skip** whatever the request or the project already answers. Ask only what materially changes the result.
+- Mandatory block: **stack** (backend/frontend), **database** (own PostgreSQL, Supabase, SQL Server, SQLite…), **existing Supabase project/integration**, **authentication**, **external integrations and available credentials**, **deploy/environment**, **test level**.
+- If the user says "you decide", pick the recommended profile from `references/stacks.md` and record the decision and why.
+- At most **one follow-up round**, only for dependencies created by the answers (e.g. "use Supabase" → "existing project? use Supabase Auth?").
+- Save the result to `.squad/stack.md` (template `templates/stack.template.md`) and show the user a 5–8 line summary.
 
-Domínios específicos (um nicho de negócio, uma integração conhecida) **não fazem parte desta skill**: se existir um *domain pack* citado pelo usuário, leia `references/domain-packs.md`. Fora isso, o PM pesquisa só o que o usuário descreveu.
+Specific domains (a business niche, a well-known integration) **are not part of this skill**: if the user names a *domain pack*, read `references/domain-packs.md`. Otherwise the PM researches only what the user described.
 
-## Passo 2 — Plano
+## Step 2 — Plan
 
-- **lite:** o Arquiteto produz, em `.squad/coordenacao/roadmap.md`, um roadmap curto: objetivo, 3 itens explicitamente fora do MVP, fatias verticais com critérios de aceite verificáveis (cada critério com ID, ex.: `F1-AC2`), modelo de dados, contratos de API, **ameaças principais** (3 a 5 linhas do `appsec`: quem pode ver/alterar o quê), riscos e o que depende de credenciais do usuário. Se houver integração externa, o PM registra a pesquisa em `.squad/produto/pesquisa-de-campo.md` com fontes oficiais, URLs e data de acesso. Mostre ao usuário o plano em até 10 linhas e siga construindo (não espere aprovação, salvo se ele pediu para revisar o plano).
-- **full / audit:** fan-out real dos especialistas em paralelo (`pm`, `designer`, `design_system`, `coord`, `dba`, `backend`, `frontend`, `frontend_reviewer`, `appsec`, `qa`, `devops`). Cada um grava só o seu relatório (ver `templates/project-docs.md`), sem alterar código. Confirme os relatórios, reenvie só os que falharam, e o `@Coord` consolida o roadmap. No `audit` e no `full`, apresente o roadmap e **espere o usuário escolher os itens**.
-- Se a pesquisa web estiver indisponível, marque a pesquisa como pendente; não invente fontes.
+- **lite:** the Architect writes a short roadmap in `.squad/coordination/roadmap.md`: goal, 3 items explicitly out of the MVP, vertical slices with verifiable acceptance criteria (each with an ID, e.g. `S1-AC2`), data model, API contracts, **main threats** (3 to 5 lines from `appsec`: who can see/change what), risks and what depends on the user's credentials. If there is an external integration, the PM records the research in `.squad/product/field-research.md` with official sources, URLs and access date. Show the user the plan in at most 10 lines and keep building (do not wait for approval unless the user asked to review the plan).
+- **full / audit:** real parallel fan-out of the specialists (`pm`, `designer`, `design_system`, `coord`, `dba`, `backend`, `frontend`, `frontend_reviewer`, `appsec`, `qa`, `devops`). Each writes only its own report (see `templates/project-docs.md`) without changing code. Confirm the reports, resend only the failed ones, and `@Coord` consolidates the roadmap. In `audit` and `full`, present the roadmap and **wait for the user to pick items**.
+- If web research is unavailable, mark it pending; never invent sources.
 
-## Passo 3 — Construção (lite: continua sem pausar; full: após a escolha de itens)
+## Step 3 — Build (lite: continues without pausing; full: after items are picked)
 
-Um pedido explícito de "crie a aplicação" já autoriza a construção no `lite`. Pare para perguntar apenas se uma decisão ausente mudar materialmente escopo, custo ou risco.
+An explicit "build the app" request already authorizes building in `lite`. Stop to ask only when a missing decision materially changes scope, cost or risk.
 
-1. **Esqueleto verificável primeiro:** estrutura de projetos, banco com migrations/schema versionado, autenticação, configuração por variáveis de ambiente, `.env.example`, `README` de execução. Rode build antes de seguir.
-2. **Fatias verticais**, uma por vez (dado → API → UI → teste). Cada fatia termina com build e testes passando; só então a próxima. Paralelize apenas trabalho independente e nunca edite o mesmo arquivo em paralelo.
-3. **Integrações externas:** interface própria + conector por serviço, atrás de configuração. Sem credencial, o app **sobe e mostra estado vazio/aviso de configuração**; nunca dados inventados. Registre no roadmap o que o usuário precisa providenciar (contas, aprovações, chaves).
-4. **Design:** `@Designer`/`@design_system` definem direção visual e tokens; use `get_design_reference` e `design-taste-frontend` para referências reais. Estados loading/empty/error/success em toda tela com dados.
-5. **Segurança durante a construção, não só no fim:** toda tabela nasce com RLS/policies (Supabase) ou toda rota de mutação nasce com autorização no servidor; segredo nasce em variável de ambiente. Use `references/stack-translation.md` para o equivalente na stack escolhida.
-6. Atualize relatórios, roadmap (status por item: `PENDENTE`, `EM ANDAMENTO`, `CONCLUÍDO`, `BLOQUEADO`) e `PROJECT_MAP.md` com **arquivos alterados e resultados reais**. Planejado não é feito.
+1. **Verifiable skeleton first:** project structure, database with versioned migrations/schema, authentication, configuration through environment variables, `.env.example`, run `README`. Run the build before moving on.
+2. **Vertical slices**, one at a time (data → API → UI → test). Each slice ends with build and tests passing; only then the next. Parallelize only independent work and never edit the same file in parallel.
+3. **External integrations:** own interface + one connector per service, behind configuration. Without credentials the app **starts and shows an empty/"configuration pending" state**; never invented data. Record in the roadmap what the user must provide (accounts, approvals, keys).
+4. **Design:** `@Designer`/`@design_system` define visual direction and tokens; use `get_design_reference` and `design-taste-frontend` for real references. Loading/empty/error/success states on every data screen.
+5. **Security while building, not only at the end:** every table is born with RLS/policies (Supabase) or every mutation route is born with server-side authorization; every secret is born in an environment variable. Use `references/stack-translation.md` for the equivalent in the chosen stack.
+6. Update reports, the roadmap (status per item: `PENDING`, `IN PROGRESS`, `DONE`, `BLOCKED`, `VALIDATED`) and `PROJECT_MAP.md` with **changed files and real results**. Planned is not done.
 
-## Gates de qualidade (valem em todos os modos)
+## Quality gates (all modes)
 
-- **Dados reais:** sem KPIs, listas, usuários ou ofertas fixos apresentados como reais. Fixtures só em teste/storybook isolado.
-- **Autenticação real** em app privado (servidor, ou RLS/policies quando o backend é Supabase). Frontend sozinho nunca é a barreira de segurança. Chaves privilegiadas jamais no cliente.
-- **Persistência real** e schema versionado; "em memória" não conta como concluído.
-- **Integração first-party provada:** requisição real do browser/cliente para o backend em execução, com status observado. Mock da própria API não satisfaz o gate.
-- **Segredos:** nada de chave em código, relatório ou log; `.env` no `.gitignore`.
-- **Linguagem do usuário na UI:** sem nomes de framework/infra.
+- **Real data:** no fixed KPIs, lists, users or offers presented as real. Fixtures only in tests/isolated stories.
+- **Real authentication** in private apps (server-side, or RLS/policies when the backend is Supabase). The frontend alone is never the security boundary. Privileged keys never reach the client.
+- **Real persistence** and versioned schema; "in memory" never counts as done.
+- **Proven first-party integration:** a real request from the browser/client to the running backend, with the observed status. Mocking your own API does not satisfy the gate.
+- **Secrets:** no keys in code, reports or logs; `.env` in `.gitignore`.
+- **User language in the UI:** no framework/infra names.
 
-## Passo 4 — Verificação
+## Step 4 — Verification
 
-- **Sempre:** `run_checks` (ou os comandos equivalentes do perfil em `references/stacks.md`): build, testes unitários e, quando previstos, integração. Anote comando + resultado. Falhou? Corrija e rode de novo; não relativize.
-- `audit_code_delivery` e `audit_security_controls` para varreduras mecânicas; trate os achados como pistas, confirme lendo o código.
-- UI: `@frontend_reviewer` (ou você, no `lite`) abre o app em browser real via `run_playwright_cli`, em desktop e mobile, e registra screenshots, console e requests. Inclua checagem de acessibilidade (axe) e desempenho (Lighthouse) quando as ferramentas estiverem disponíveis; sem elas, registre como não executado.
-- **Revisão independente (todos os modos):** quem construiu não aprova a própria entrega. Com ferramenta de subagentes, rode **em paralelo** e com contexto limpo (só o diff, `.squad/stack.md` e o roadmap; nada das justificativas do Construtor):
-  - `code_critic_blind` — atalhos, mocks, dados falsos, erros engolidos;
-  - `appsec` — autorização/RLS testada com dois usuários, segredos fora do cliente, entradas validadas, armadilhas de `references/stack-translation.md`.
-  Corrija os achados críticos/altos e peça um segundo passe só sobre o que mudou. Sem subagentes, faça os dois passes você mesmo, em sequência, e declare que não foram independentes.
-- **Tabela de aceite (lite):** no roadmap, uma linha por critério (`F1-AC2 | APROVADO/REPROVADO | evidência`); critério sem evidência = REPROVADO.
-- `full`: os dois críticos debatem, depois o `@Finalizer` roda `validate_completion_checklist` e `validate_squad_artifacts`; só declare concluído com `valid: true`. Lacuna = tarefa no roadmap e aceite bloqueado.
+- **Always:** `run_checks` (or the equivalent commands of the profile in `references/stacks.md`): lint, typecheck, build, unit tests and, when planned, integration tests. Record command + result. Failed? Fix and run again; do not downplay.
+- `audit_code_delivery` and `audit_security_controls` for mechanical scans; treat findings as leads and confirm by reading the code.
+- UI: `@frontend_reviewer` (or you, in `lite`) opens the app in a real browser through `run_playwright_cli`, on desktop and mobile, and records screenshots, console and requests. Include accessibility (axe) and performance (Lighthouse) checks when the tools are available; otherwise record them as not run.
+- **Independent review (all modes):** whoever built it does not approve it. With a subagent tool, run **in parallel** and with a clean context (only the diff, `.squad/stack.md` and the roadmap; none of the Builder's justifications):
+  - `code_critic_blind` — shortcuts, mocks, fake data, swallowed errors;
+  - `appsec` — authorization/RLS proved with two users, secrets out of the client, validated inputs, pitfalls in `references/stack-translation.md`.
+  Fix critical/high findings and ask for a second pass only over what changed. Without subagents, run both passes yourself, in sequence, and state that they were not independent.
+- **Acceptance table (lite):** in the roadmap, one row per criterion (`S1-AC2 | APPROVED/REJECTED | evidence`); a criterion without evidence is REJECTED.
+- `full`: the two critics debate, then `@Finalizer` runs `validate_completion_checklist` and `validate_squad_artifacts`; declare done only with `valid: true`. A gap becomes a roadmap task and blocks acceptance.
 
-## Passo 4.5 — Deploy (opcional, só com autorização)
+## Step 4.5 — Deploy (optional, only with authorization)
 
-Deploy é ação externa: só execute o que o usuário autorizou na entrevista (`.squad/stack.md`, seção Deploy) ou depois, explicitamente.
+Deploying is an outward-facing action: run only what the user authorized in the interview (`.squad/stack.md`, Deploy section) or explicitly later.
 
-1. Pré-requisitos: verificação do Passo 4 limpa; variáveis de ambiente listadas por ambiente (nomes, sem valores) e conferidas; migrations versionadas.
-2. Supabase: `supabase link` ao projeto de **preview/dev** e `supabase db push`. Produção só com nova autorização.
-3. Vercel: `vercel deploy` (preview). Produção (`--prod`) só com nova autorização.
-4. Smoke test na URL de preview com `run_playwright_cli`: página principal, login, um fluxo de dados real; registre status HTTP e console em `.squad/evidencias/deploy.md`.
-5. Sem login na CLI ou sem autorização: não tente contornar; entregue os comandos exatos para o usuário rodar e marque o deploy como pendente dele.
+1. Prerequisites: Step 4 clean; environment variables listed per environment (names, no values) and checked; migrations versioned.
+2. Supabase: `supabase link` to the **preview/dev** project and `supabase db push`. Production only with a new authorization.
+3. Vercel: `vercel deploy` (preview). Production (`--prod`) only with a new authorization.
+4. Smoke test on the preview URL with `run_playwright_cli`: home page, login, one real data flow; record HTTP status and console in `.squad/evidence/deploy.md`.
+5. No CLI login or no authorization: do not work around it; hand the user the exact commands and mark the deploy as pending on them.
 
-## Passo 5 — Entrega
+## Step 5 — Delivery
 
-Responda com: o que foi construído e **como rodar** (comandos exatos); URL de preview, se houve deploy; o que passou e o que falhou/ficou bloqueado, com evidência; achados dos revisores independentes e o que foi corrigido; **o que o usuário ainda precisa configurar** (chaves, contas, aprovações, DNS), com o passo a passo para obter cada uma; decisões da entrevista e da descoberta; próximos itens do roadmap. Nunca exiba selo de qualidade sem evidência.
+Answer, in the user's language, with: what was built and **how to run it** (exact commands); preview URL if deployed; what passed and what failed/stayed blocked, with evidence; the independent reviewers' findings and what was fixed; **what the user still needs to configure** (keys, accounts, approvals, DNS), with step-by-step instructions to obtain each; decisions from the interview and discovery; next roadmap items. Never show a quality badge without evidence.
 
-## Referências desta skill
+## References in this skill
 
-- `references/discovery.md` — descoberta de mercado e decisão construir × integrar × adaptar.
-- `references/intake.md` — perguntas, opções e como registrar as respostas.
-- `references/stacks.md` — perfis de stack (incluindo Next.js + Supabase no Vercel), comandos de build/teste/deploy.
-- `references/stack-translation.md` — equivalente, em cada stack, das exigências escritas com exemplos .NET nos agentes; armadilhas de Supabase e Vercel.
-- `references/integrations.md` — padrões para mensageria, coleta de dados de terceiros, jobs agendados, webhooks, pagamentos e LLM.
-- `references/domain-packs.md` — como acoplar conhecimento de um nicho sem poluir a skill.
+- `references/discovery.md` — market discovery and the build × integrate × adapt decision.
+- `references/intake.md` — questions, options and how to record the answers.
+- `references/stacks.md` — stack profiles (including Next.js + Supabase on Vercel), build/test/deploy commands.
+- `references/stack-translation.md` — the equivalent, per stack, of the requirements the agents write with .NET examples; Supabase and Vercel pitfalls.
+- `references/integrations.md` — patterns for messaging, third-party data collection, scheduled jobs, webhooks, payments and LLMs.
+- `references/domain-packs.md` — how to plug in niche knowledge without polluting the skill.
+- `references/rules.md` — the squad rules (installed from `rules/squad-context.md`).
 - `templates/` — `stack.template.md`, `project-docs.md`, `roadmap.md`, `agent-report.md`, `PROJECT_MAP.template.md`.

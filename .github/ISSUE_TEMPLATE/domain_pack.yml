@@ -1,0 +1,29 @@
+name: Domain pack proposal
+description: Propose niche knowledge (a business type or a well-known integration) as a separate pack.
+labels: [domain-pack]
+body:
+  - type: markdown
+    attributes:
+      value: Domain packs live outside the core skill. See `squad-kit/skills/squad/references/domain-packs.md` for what a pack contains.
+  - type: input
+    id: domain
+    attributes:
+      label: Domain
+      placeholder: e.g. price monitoring and broadcast, clinic scheduling, restaurant ordering
+    validations:
+      required: true
+  - type: textarea
+    id: flows
+    attributes:
+      label: Main flows and glossary
+    validations:
+      required: true
+  - type: textarea
+    id: integrations
+    attributes:
+      label: Typical integrations (official links) and policy constraints
+      description: Approvals, consent/opt-in rules, rate limits, costs.
+  - type: textarea
+    id: questions
+    attributes:
+      label: Extra interview questions and suggested vertical slices

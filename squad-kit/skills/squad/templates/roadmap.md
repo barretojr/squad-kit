@@ -1,11 +1,19 @@
-# Modelo de roadmap
+# Roadmap template
 
-## Contexto e decisões da mesa-redonda
+## Context and decisions
 
-Resumo curto de problema, usuários, stack observada e decisões com links para `.squad/produto/pesquisa-de-campo.md` e relatórios relacionados. Separe fato de hipótese.
+Short summary of the problem, users, observed stack and decisions, with links to `.squad/product/discovery.md`, `.squad/product/field-research.md` and related reports. Keep facts apart from assumptions.
 
-## Itens
+## Items
 
-Para cada item: `ID`, prioridade, status (`PLANEJADO`, `EM_EXECUCAO`, `BLOQUEADO`, `CONCLUIDO`, `VALIDADO`), resultado, escopo, exclusões, dependências, agentes, arquivos prováveis (a confirmar), critérios de aceite, validação, risco e evidências.
+For each item: `ID`, priority, status (`PENDING`, `IN PROGRESS`, `BLOCKED`, `DONE`, `VALIDATED`), outcome, scope, exclusions, dependencies, agents, likely files (to confirm), acceptance criteria (each with an ID, e.g. `S1-AC2`), validation, risk and evidence.
 
-Agrupe slices por valor e dependência. Identifique tarefas em paralelo, gates de autenticação/API e ordem de UI integrada. Não marque `CONCLUIDO` por plano; `VALIDADO` exige execução e evidência.
+Group slices by value and dependency. Identify parallel tasks, authentication/API gates and the order of integrated UI work. Never mark `DONE` from a plan; `VALIDATED` requires execution and evidence.
+
+## Acceptance table
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| S1-AC1 | APPROVED / REJECTED | Command: ...; Result: ... |
+
+A criterion without evidence is REJECTED.

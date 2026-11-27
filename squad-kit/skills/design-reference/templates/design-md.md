@@ -1,17 +1,17 @@
-# DESIGN.md — [Produto]
+# DESIGN.md — [Product]
 
-> Status: PROPOSTA | VALIDADO
-> Escopo/versão: [tela, feature ou produto]
-> Fontes e data de consulta: [URLs]
+> Status: PROPOSED | VALIDATED
+> Scope/version: [screen, feature or product]
+> Sources and access date: [URLs]
 
-## Contexto e princípios
-[Público, tarefas principais, necessidades de confiança/acessibilidade e fatos versus recomendações.]
+## Context and principles
+[Audience, main tasks, trust/accessibility needs, and facts versus recommendations.]
 
-## Linguagem visual
-[Atmosfera e hierarquia ligadas ao produto; o que não deve parecer genérico e por quê.]
+## Visual language
+[Atmosphere and hierarchy tied to the product; what must not look generic, and why.]
 
 ## Tokens
-| Papel | Valor/token existente | Uso | Evidência/decisão |
+| Role | Value/existing token | Use | Evidence/decision |
 |---|---|---|---|
 | background | | | |
 | foreground | | | |
@@ -20,24 +20,24 @@
 | muted | | | |
 | border/focus | | | |
 
-## Tipografia, layout e superfícies
-[Famílias disponíveis/licença, escala e pesos; largura, grid e espaçamento; raios, bordas, sombras e regras responsivas.]
+## Typography, layout and surfaces
+[Available families and license, scale and weights; width, grid and spacing; radii, borders, shadows and responsive rules.]
 
-## Componentes e estados
-[Nav, formulários, tabelas/cartões, botões, feedback; hover/focus/active/disabled; loading/empty/error/success.]
+## Components and states
+[Nav, forms, tables/cards, buttons, feedback; hover/focus/active/disabled; loading/empty/error/success.]
 
-## Imagens, ícones e marca
-[Origem/licença/atribuição; regras para logo e ativos do produto. Não desenhar dados fictícios como screenshots do produto.]
+## Images, icons and brand
+[Origin/license/attribution; rules for the logo and product assets. Never draw fake data as product screenshots.]
 
-## Acessibilidade e movimento
-[Contraste, teclado, foco, semântica, redução de movimento e comportamento para viewport estreito.]
+## Accessibility and motion
+[Contrast, keyboard, focus, semantics, reduced motion and behavior on narrow viewports.]
 
-## Regras de consistência
-### Fazer
-- [Regra observável e verificável]
+## Consistency rules
+### Do
+- [Observable, verifiable rule]
 
-### Evitar
-- [Padrão e razão ligada ao produto]
+### Avoid
+- [Pattern and the product-related reason]
 
-## Decisões em aberto e histórico
-[Responsável, dependência, decisão e data.]
+## Open decisions and history
+[Owner, dependency, decision and date.]

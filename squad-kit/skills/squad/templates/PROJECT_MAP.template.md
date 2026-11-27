@@ -1,31 +1,31 @@
-# PROJECT_MAP — Índice confirmado do projeto
+# PROJECT_MAP — Confirmed project index
 
-> Use como índice para localizar áreas relevantes. Confirme os caminhos e contratos no código antes de depender do mapa; atualize-o quando uma mudança alterar navegação, componentes ou APIs. Não trate exemplos como funcionalidades existentes.
+> Use it as an index to find relevant areas. Confirm paths and contracts in the code before relying on the map; update it when a change alters navigation, components or APIs. Never treat examples as existing features.
 
-## Telas e componentes
+## Screens and components
 
-| Área/tela/componente | Caminho confirmado | Responsividade/estados | Última verificação |
+| Area/screen/component | Confirmed path | Responsiveness/states | Last verified |
 |---|---|---|---|
-| [preencher] | [caminho relativo] | [comportamento observado] | [data/commit] |
+| [fill in] | [relative path] | [observed behavior] | [date/commit] |
 
-## Rotas e APIs
+## Routes and APIs
 
-| Fluxo | Método e rota | Implementação/contrato | Autenticação/autorização | Evidência |
+| Flow | Method and route | Implementation/contract | Authentication/authorization | Evidence |
 |---|---|---|---|---|
-| [preencher] | [GET/POST/... /api/...] | [caminho relativo] | [requisito] | [teste/documento] |
+| [fill in] | [GET/POST/... /api/...] | [relative path] | [requirement] | [test/document] |
 
-## Dados e integrações
+## Data and integrations
 
-| Recurso | Fonte | Consumidores | Observações confirmadas |
+| Resource | Source | Consumers | Confirmed notes |
 |---|---|---|---|
-| [preencher] | [banco/serviço] | [áreas do produto] | [restrições] |
+| [fill in] | [database/service] | [product areas] | [constraints] |
 
-## Testes e operação
+## Tests and operations
 
-| Escopo | Comando/documento | Resultado e data |
+| Scope | Command/document | Result and date |
 |---|---|---|
-| [preencher] | [comando/caminho] | [resultado real ou não executado] |
+| [fill in] | [command/path] | [real result or not run] |
 
-## Pendências do mapa
+## Open map items
 
-- [informação não confirmada, responsável e próximo passo]
+- [unconfirmed information, owner and next step]

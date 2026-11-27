@@ -1,0 +1,31 @@
+name: Feature or improvement
+description: A new persona, stack profile, MCP check, flow step or documentation improvement.
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options: [new or changed persona, stack profile, MCP check/tool, squad flow, documentation/translation, other]
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What goes wrong or is missing today when you use the squad?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should change? For MCP checks, include a positive and a negative example.
+    validations:
+      required: true
+  - type: checkboxes
+    id: contract
+    attributes:
+      label: Contract impact
+      options:
+        - label: This changes `.squad/` paths, required headings, status keywords or MCP tool arguments (breaking).

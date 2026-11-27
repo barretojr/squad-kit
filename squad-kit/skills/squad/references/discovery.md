@@ -1,72 +1,72 @@
-# Descoberta de mercado (antes da entrevista)
+# Market discovery (before the interview)
 
-Objetivo: antes de perguntar a stack, saber **o que já existe** que resolve o pedido, inteiro ou em partes, para que a entrevista ofereça escolhas informadas (construir, integrar ou adaptar) e o plano não reinvente o que já é produto, biblioteca ou API.
+Goal: before asking about the stack, learn **what already exists** that solves the request, fully or in part, so the interview offers informed choices (build, integrate or adapt) and the plan does not reinvent what is already a product, library or API.
 
-Dono: `@PM` (no `lite`, o Arquiteto). Saída: `.squad/produto/descoberta.md`. Duração-alvo: curta; é um reconhecimento, não um estudo de mercado.
+Owner: `@PM` (in `lite`, the Architect). Output: `.squad/product/discovery.md`, written in the user's language. Target length: short; this is reconnaissance, not a market study.
 
-## Quando rodar
+## When to run
 
-- Sempre em greenfield com pedido de "crie/construa…".
-- Em brownfield, só para a feature nova pedida (não para o produto inteiro).
-- Pule se o usuário disser explicitamente "não pesquise" ou se `.squad/produto/descoberta.md` já existir e cobrir o pedido.
-- Sem acesso à web: registre "descoberta pendente: sem acesso à web", não invente produtos nem URLs, e siga para a entrevista.
+- Always in greenfield with a "build/create…" request.
+- In brownfield, only for the new feature requested (not the whole product).
+- Skip it if the user explicitly says "don't research" or if `.squad/product/discovery.md` already exists and covers the request.
+- Without web access: record "discovery pending: no web access", never invent products or URLs, and go to the interview.
 
-## O que levantar (fontes primárias, URL direta e data de acesso)
+## What to gather (primary sources, direct URL and access date)
 
-1. **Produtos equivalentes (3 a 5):** quem já faz isso, para quem, modelo de preço, o que fazem bem e o que os usuários reclamam (só se houver fonte pública). Serve para recorte de escopo e diferencial, não para copiar.
-2. **Blocos reutilizáveis:** para cada capacidade central do pedido, o que existe pronto:
-   - API/serviço oficial (ex.: um canal de mensagens, um provedor de pagamentos, uma fonte de dados);
-   - biblioteca/SDK open source mantido (licença, última release, estrelas não são critério sozinhas);
-   - template/starter oficial da stack provável.
-3. **Restrições que mudam a arquitetura:** termos de uso, políticas da plataforma, aprovações de conta, custos por uso, limites de taxa, exigência de opt-in/consentimento, proibição de automação não oficial. Veja `references/integrations.md`.
-4. **Riscos de dependência:** API não oficial, serviço sem SLA, preço que escala com uso, lock-in.
+1. **Equivalent products (3 to 5):** who already does this, for whom, pricing model, what they do well and what users complain about (only with a public source). Used for scope cuts and differentiation, not for copying.
+2. **Reusable building blocks:** for each core capability of the request, what already exists:
+   - official API/service (e.g. a messaging channel, a payment provider, a data source);
+   - maintained open-source library/SDK (license, latest release; stars alone are not a criterion);
+   - official template/starter of the likely stack.
+3. **Constraints that change the architecture:** terms of use, platform policies, account approvals, usage-based costs, rate limits, opt-in/consent requirements, bans on unofficial automation. See `references/integrations.md`.
+4. **Dependency risks:** unofficial API, service without SLA, pricing that scales with usage, lock-in.
 
-## Decisão construir × integrar × adaptar
+## Build × integrate × adapt
 
-Para cada capacidade central, registre uma linha:
+Record one row per core capability:
 
-| Capacidade | Opções encontradas | Recomendação | Motivo | Custo/risco |
+| Capability | Options found | Recommendation | Reason | Cost/risk |
 |---|---|---|---|---|
-| [ex.: envio de mensagens] | [API oficial X; biblioteca não oficial Y] | integrar X | [política, estabilidade] | [custo por mensagem; aprovação de conta] |
+| [e.g. sending messages] | [official API X; unofficial library Y] | integrate X | [policy, stability] | [cost per message; account approval] |
 
-Regras:
+Rules:
 
-- Prefira **API oficial** a automação não oficial; se a única opção viável for não oficial, marque como risco alto e leve à entrevista.
-- Prefira **integrar** quando o bloco não é o diferencial do produto; **construa** o que é diferencial.
-- Nunca recomende contornar termos de uso, CAPTCHA, paywall ou bloqueio técnico.
+- Prefer the **official API** over unofficial automation; if the only viable option is unofficial, mark it high risk and bring it to the interview.
+- **Integrate** when the block is not the product's differentiator; **build** what is.
+- Never recommend working around terms of use, CAPTCHAs, paywalls or technical blocks.
 
-## Como alimenta a entrevista
+## How it feeds the interview
 
-Leve no máximo **duas** perguntas da descoberta para o bloco da entrevista, só quando a resposta mudar a arquitetura. Exemplos de formato:
+Bring at most **two** discovery questions into the interview block, only when the answer changes the architecture. Example formats:
 
-- "Para [capacidade], o caminho oficial é [X] (exige [aprovação/custo]). Usar X, usar [alternativa] ciente do risco, ou deixar fora do MVP?"
-- "Já existe [produto] que faz [parte]. Integrar com ele ou construir próprio?"
+- "For [capability], the official path is [X] (requires [approval/cost]). Use X, use [alternative] accepting the risk, or leave it out of the MVP?"
+- "[Product] already does [part]. Integrate with it or build our own?"
 
-Mostre ao usuário um resumo de 3 a 5 linhas da descoberta junto com as perguntas.
+Show the user a 3–5 line discovery summary together with the questions.
 
-## Modelo de `.squad/produto/descoberta.md`
+## Template for `.squad/product/discovery.md`
 
 ```markdown
-# Descoberta — [pedido em uma frase]
+# Discovery — [request in one sentence]
 
-- **Data:** [AAAA-MM-DD] · **Acesso à web:** [sim/não]
+- **Date:** [YYYY-MM-DD] · **Web access:** [yes/no]
 
-## Produtos equivalentes
-| Produto | Para quem | Preço | Pontos fortes | Lacunas observadas | Fonte (URL, data) |
+## Equivalent products
+| Product | For whom | Price | Strengths | Observed gaps | Source (URL, date) |
 |---|---|---|---|---|---|
 
-## Blocos reutilizáveis e decisão
-| Capacidade | Opções | Recomendação | Motivo | Custo/risco |
+## Building blocks and decision
+| Capability | Options | Recommendation | Reason | Cost/risk |
 |---|---|---|---|---|
 
-## Restrições que afetam a arquitetura
-- [política/limite/aprovação — fonte]
+## Constraints affecting the architecture
+- [policy/limit/approval — source]
 
-## Diferencial proposto
-- [o que este produto faz que os equivalentes não fazem, ou "nenhum: é uma versão própria"]
+## Proposed differentiator
+- [what this product does that the equivalents do not, or "none: it is an in-house version"]
 
-## Perguntas levadas para a entrevista
+## Questions brought to the interview
 1. [...]
 ```
 
-Fatos, inferências e recomendações ficam separados. Nada de números de mercado sem fonte.
+Keep facts, inferences and recommendations apart. No market numbers without a source.

@@ -44,7 +44,7 @@ Or search for design patterns across all systems:
    - Typography scales, weights, and letter-spacing.
    - Spacing scales, grid rhythms, and border-radii.
    - Component states (hover, focus-visible, active, disabled, optimistic).
-4. **Author the Project Contract:** Produce `.squad/design/DESIGN.md` (or `.agentes/design/DESIGN.md`) using `templates/design-md.md`.
+4. **Author the Project Contract:** Produce `.squad/design/DESIGN.md` using `templates/design-md.md`.
    - Never copy a company's exact logo, brand assets, or verbatim prose.
    - Ground every choice in the product's actual purpose.
    - Preserve brownfield tokens unless explicitly scoped to change.

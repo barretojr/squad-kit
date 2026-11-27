@@ -24,7 +24,7 @@ This skill bundles:
 3. **Assets (`assets/`):**
    - Reusable background treatments, component styles, motion curves, and system CSS/JS.
 4. **MCP Tool Integration:**
-   - Call `audit_frontend_taste` via the Antigravity Squad MCP server to automatically scan your frontend code for AI slop, hardcoded hex values, monotonous layouts, and missing accessibility considerations.
+   - Call `audit_frontend_taste` via the Squad MCP server to automatically scan your frontend code for AI slop, hardcoded hex values, monotonous layouts, and missing accessibility considerations.
 
 ## Core Principles
 
@@ -45,4 +45,4 @@ This skill bundles:
 
 1. In development, inspect components in the browser at desktop (1440px) and mobile (390px) viewports.
 2. Run `audit_frontend_taste` to identify anti-patterns, contrast problems, or buzzwords.
-3. Record visual review findings in `.squad/frontend/revisao-visual.md` with concrete evidence.
+3. Record visual review findings in `.squad/frontend/visual-review.md` with concrete evidence.

@@ -1,74 +1,74 @@
-# Perfis de stack
+# Stack profiles
 
-Use o perfil escolhido na entrevista. Em brownfield, o perfil é o que o projeto já usa. Os comandos abaixo são os que `run_checks` tenta detectar; confirme no projeto antes de depender deles. Para traduzir as exigências dos agentes (escritas com exemplos .NET) para outra stack, use `references/stack-translation.md`.
+Use the profile chosen in the interview. In brownfield, the profile is whatever the project already uses. The commands below are what `run_checks` tries to detect; confirm them in the project before relying on them. To translate the agents' requirements (written with .NET examples) to another stack, use `references/stack-translation.md`.
 
-## Qual perfil recomendar quando o usuário diz "decida você"
+## Which profile to recommend when the user says "you decide"
 
-| Sinal no pedido ou na conversa | Perfil recomendado |
+| Signal in the request or conversation | Recommended profile |
 |---|---|
-| Cita Vercel, Supabase, "subir rápido", SaaS/web app sem preferência de linguagem | **G** (Next.js + Supabase no Vercel) |
-| Só frontend + dados simples por usuário, sem integração com segredo | **C** (React + Supabase) |
-| Prefere .NET / equipe .NET / integração corporativa Windows | **A** ou **B** |
-| Prefere Python ou o núcleo é dados/ML | **E** |
-| Prefere Node e quer backend separado de longa duração (filas, WebSocket próprio) | **D** |
-| Protótipo descartável local | **F** |
+| Mentions Vercel, Supabase, "ship fast", SaaS/web app with no language preference | **G** (Next.js + Supabase on Vercel) |
+| Frontend only + simple per-user data, no integration that needs a secret | **C** (React + Supabase) |
+| Prefers .NET / .NET team / Windows enterprise integration | **A** or **B** |
+| Prefers Python or the core is data/ML | **E** |
+| Prefers Node and wants a separate long-running backend (queues, own WebSocket) | **D** |
+| Throwaway local prototype | **F** |
 
-Registre em `.squad/stack.md` o sinal que levou à escolha.
+Record in `.squad/stack.md` the signal that led to the choice.
 
-## G. Next.js (App Router) + Supabase, deploy no Vercel (recomendado para web app/SaaS sem preferência)
+## G. Next.js (App Router) + Supabase, deployed on Vercel (recommended for web apps/SaaS with no preference)
 
-- Estrutura: `app/` (rotas, Server Components, Route Handlers em `app/api/**/route.ts`, Server Actions), `lib/supabase/` (clientes **server** e **browser** separados, via `@supabase/ssr`), `supabase/` (migrations, `seed.sql`, `config.toml`, Edge Functions), `tests/`.
-- Dados: Postgres do Supabase; schema versionado com `supabase migration new` e `supabase db push`; tipos com `supabase gen types typescript --local > lib/database.types.ts`. RLS habilitado em **toda** tabela de `public`.
-- Auth: Supabase Auth com cookies via `@supabase/ssr`; `middleware.ts` renova a sessão; toda mutação valida usuário no servidor (`getUser()`, não só `getSession()`) **e** é protegida por RLS.
-- Segredos: `NEXT_PUBLIC_SUPABASE_URL` e a chave `anon`/publishable podem ir ao cliente; `SUPABASE_SERVICE_ROLE_KEY`/secret key e chaves de terceiros só no servidor (Route Handlers, Server Actions, Edge Functions), nunca com prefixo `NEXT_PUBLIC_`.
-- Jobs: Vercel Cron chamando Route Handler protegido por segredo (`CRON_SECRET`) **ou** `pg_cron`/Edge Function agendada no Supabase; confira os limites do plano na doc oficial. Ver `references/integrations.md`.
-- Build/test: `npm ci`, `npm run lint`, `npx tsc --noEmit` (ou script `typecheck`), `npm run build`, `npm test` (Vitest). Integração: `supabase start` + testes contra o Supabase local com **dois usuários** (BOLA/RLS); `supabase test db` para policies em pgTAP. E2E: Playwright contra `npm run build && npm start`.
-- Deploy: `vercel link`, variáveis por ambiente (`vercel env add`), deploy de preview (`vercel deploy`) e produção (`vercel deploy --prod`) **somente com autorização explícita do usuário** (é ação externa). Migrations em produção: `supabase link` + `supabase db push`, também com autorização. Smoke test com Playwright na URL de preview.
-- Observabilidade mínima: logs das funções no Vercel, `error.tsx`/`global-error.tsx`, página de status/última execução dos jobs para o admin.
+- Structure: `app/` (routes, Server Components, Route Handlers in `app/api/**/route.ts`, Server Actions), `lib/supabase/` (separate **server** and **browser** clients through `@supabase/ssr`), `supabase/` (migrations, `seed.sql`, `config.toml`, Edge Functions), `tests/`.
+- Data: Supabase Postgres; schema versioned with `supabase migration new` and `supabase db push`; types with `supabase gen types typescript --local > lib/database.types.ts`. RLS enabled on **every** table in `public`.
+- Auth: Supabase Auth with cookies through `@supabase/ssr`; `middleware.ts` refreshes the session; every mutation validates the user on the server (`getUser()`, not only `getSession()`) **and** is protected by RLS.
+- Secrets: `NEXT_PUBLIC_SUPABASE_URL` and the `anon`/publishable key may reach the client; `SUPABASE_SERVICE_ROLE_KEY`/secret key and third-party keys only on the server (Route Handlers, Server Actions, Edge Functions), never with a `NEXT_PUBLIC_` prefix.
+- Jobs: Vercel Cron calling a Route Handler protected by a secret (`CRON_SECRET`) **or** `pg_cron`/a scheduled Edge Function in Supabase; check the plan limits in the official docs. See `references/integrations.md`.
+- Build/test: `npm ci`, `npm run lint`, `npx tsc --noEmit` (or a `typecheck` script), `npm run build`, `npm test` (Vitest). Integration: `supabase start` + tests against the local Supabase with **two users** (BOLA/RLS); `supabase test db` for pgTAP policy tests. E2E: Playwright against `npm run build && npm start`.
+- Deploy: `vercel link`, per-environment variables (`vercel env add`), preview deploy (`vercel deploy`) and production (`vercel deploy --prod`) **only with the user's explicit authorization** (outward-facing action). Production migrations: `supabase link` + `supabase db push`, also with authorization. Playwright smoke test on the preview URL.
+- Minimum observability: Vercel function logs, `error.tsx`/`global-error.tsx`, a status/last-run page for jobs for the admin.
 
-## A. .NET + React + PostgreSQL (recomendado se o usuário prefere .NET)
+## A. .NET + React + PostgreSQL (recommended if the user prefers .NET)
 
-- Estrutura: `src/Api` (+ Domain/Application/Infrastructure quando o tamanho justificar), `client/` (React + TS + Vite), `tests/`.
-- Dados: EF Core + Npgsql, migrations (`dotnet ef migrations add`, `dotnet ef database update`), PostgreSQL via `docker compose`.
-- Auth: ASP.NET Identity ou JWT com hashing do `PasswordHasher`; `[Authorize]` nas rotas de mutação.
-- Build/test: `dotnet build`, `dotnet test`; cliente: `npm ci`, `npm run build`, `npm test`.
-- Integração: `WebApplicationFactory` + Testcontainers (PostgreSQL real). E2E: Playwright.
-- Aplicabilidade: LocalDB/Visual Studio só se aplica se o banco for SQL Server em Windows; com PostgreSQL marque N/A com motivo.
+- Structure: `src/Api` (+ Domain/Application/Infrastructure when size justifies it), `client/` (React + TS + Vite), `tests/`.
+- Data: EF Core + Npgsql, migrations (`dotnet ef migrations add`, `dotnet ef database update`), PostgreSQL through `docker compose`.
+- Auth: ASP.NET Identity or JWT with `PasswordHasher` hashing; `[Authorize]` on mutation routes.
+- Build/test: `dotnet build`, `dotnet test`; client: `npm ci`, `npm run build`, `npm test`.
+- Integration: `WebApplicationFactory` + Testcontainers (real PostgreSQL). E2E: Playwright.
+- Applicability: LocalDB/Visual Studio only applies to SQL Server on Windows; with PostgreSQL mark it N/A with the reason.
 
 ## B. .NET + React + Supabase
 
-- Banco: Postgres do Supabase. A API .NET conecta com Npgsql na connection string do Supabase (use o *pooler* em ambientes serverless/curtos) ou o frontend usa `supabase-js` só para o que for seguro por RLS.
-- Auth: Supabase Auth no frontend; a API .NET **valida o JWT do Supabase** (JWKS/segredo do projeto) e autoriza no servidor. Alternativa: auth própria e Supabase só como Postgres.
-- Schema: migrations versionadas (Supabase CLI `supabase migration new` / `supabase db push`, **ou** EF Core; não os dois sem combinar). RLS habilitado em toda tabela exposta.
-- Segredos: `service_role` só no servidor; `anon key` pode ir ao cliente, protegida por RLS.
-- Dev local: `supabase start` (Docker) para ter Postgres/Auth locais.
-- Build/test igual ao perfil A; testes de RLS com dois usuários.
+- Database: Supabase Postgres. The .NET API connects with Npgsql to the Supabase connection string (use the *pooler* in serverless/short-lived environments), or the frontend uses `supabase-js` only for what RLS keeps safe.
+- Auth: Supabase Auth in the frontend; the .NET API **validates the Supabase JWT** (project JWKS/secret) and authorizes on the server. Alternative: own auth and Supabase only as Postgres.
+- Schema: versioned migrations (Supabase CLI `supabase migration new` / `supabase db push`, **or** EF Core; not both without agreeing). RLS enabled on every exposed table.
+- Secrets: `service_role` only on the server; the `anon` key may reach the client, protected by RLS.
+- Local dev: `supabase start` (Docker) for local Postgres/Auth.
+- Build/test as in profile A; RLS tests with two users.
 
-## C. React + Supabase (sem backend próprio)
+## C. React + Supabase (no own backend)
 
-- O frontend fala direto com o Supabase; **a segurança é RLS + policies** testadas. Lógica sensível, segredos e integrações externas vão para **Edge Functions** ou um pequeno backend.
-- Auth: Supabase Auth. Tipos gerados pelo CLI (`supabase gen types`).
-- Build/test: `npm ci`, `npm run build`, `npm test`; E2E Playwright contra o projeto local (`supabase start`).
-- Gate de "autorização no servidor" = policies de RLS verificadas com pelo menos dois usuários (BOLA/IDOR).
+- The frontend talks straight to Supabase; **security is RLS + tested policies**. Sensitive logic, secrets and external integrations go to **Edge Functions** or a small backend.
+- Auth: Supabase Auth. Types generated by the CLI (`supabase gen types`).
+- Build/test: `npm ci`, `npm run build`, `npm test`; Playwright E2E against the local project (`supabase start`).
+- The "server-side authorization" gate = RLS policies verified with at least two users (BOLA/IDOR).
 
-## D. Node/TypeScript (Fastify ou NestJS) + React/Next + PostgreSQL ou Supabase
+## D. Node/TypeScript (Fastify or NestJS) + React/Next + PostgreSQL or Supabase
 
-- ORM: Prisma ou Drizzle, com migrations. Validação de entrada (Zod).
-- Auth: JWT/sessão com hashing (argon2/bcrypt) ou Supabase Auth.
-- Build/test: `npm ci`, `npm run build`, `npm test` (Vitest/Jest); integração com Testcontainers ou banco local em Docker; E2E Playwright.
+- ORM: Prisma or Drizzle, with migrations. Input validation (Zod).
+- Auth: JWT/session with hashing (argon2/bcrypt) or Supabase Auth.
+- Build/test: `npm ci`, `npm run build`, `npm test` (Vitest/Jest); integration with Testcontainers or a local Docker database; Playwright E2E.
 
-## E. Python (FastAPI) + React + PostgreSQL ou Supabase
+## E. Python (FastAPI) + React + PostgreSQL or Supabase
 
-- SQLAlchemy/SQLModel + Alembic; Pydantic para contratos.
-- Build/test: `pytest`; cliente como no perfil D.
+- SQLAlchemy/SQLModel + Alembic; Pydantic for contracts.
+- Build/test: `pytest`; client as in profile D.
 
-## F. SQLite (protótipo)
+## F. SQLite (prototype)
 
-- Só para protótipo local; avise que não é o destino de produção. Use migrations mesmo assim.
+- Local prototype only; warn that it is not the production target. Use migrations anyway.
 
-## Regras comuns
+## Common rules
 
-- `docker-compose.yml` para dependências locais (banco etc.) quando não for Supabase gerenciado.
-- `.env.example` completo e `.env` no `.gitignore`.
-- README de execução com os comandos exatos, validados.
-- CI mínimo (build + testes) quando o usuário escolher nuvem/GitHub.
+- `docker-compose.yml` for local dependencies (database etc.) when not using managed Supabase.
+- Complete `.env.example` and `.env` in `.gitignore`.
+- Run README with the exact, validated commands.
+- Minimal CI (build + tests) when the user picks cloud/GitHub.

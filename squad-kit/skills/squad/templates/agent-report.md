@@ -1,34 +1,36 @@
-# Modelo para todos os relatórios de agente
+# Template for every agent report
 
-# <Especialista> — <domínio>
+Headings are a fixed contract (English); write the body in the language recorded in `.squad/stack.md`.
 
-- **Status:** PLANEJADO | EM_EXECUCAO | BLOQUEADO | CONCLUIDO | VALIDADO
-- **Atualizado em:** YYYY-MM-DD
-- **Demanda/roadmap:** <ID ou nome>
-- **Responsabilidade:** <domínio e limites>
+# <Specialist> — <domain>
 
-## Contexto e evidências
+- **Status:** PLANNED | IN PROGRESS | BLOCKED | DONE | VALIDATED
+- **Updated:** YYYY-MM-DD
+- **Request/roadmap:** <ID or name>
+- **Owner:** <domain and limits>
 
-Fatos observados no projeto e fontes diretas. Rotule inferências e hipóteses.
+## Context and evidence
 
-## Decisões e recomendações
+Facts observed in the project and direct sources. Label inferences and assumptions.
 
-## O que precisa ser feito
+## Decisions and recommendations
 
-Lista de tarefas com IDs do roadmap, critérios e prioridade.
+## What needs to be done
 
-## Plano e dependências
+Task list with roadmap IDs, criteria and priority.
 
-## O que foi feito
+## Plan and dependencies
 
-Na fase de planejamento, escreva: “Nenhuma implementação de produto nesta fase”. Na execução, registre somente trabalho realmente concluído e os arquivos alterados.
+## What was done
 
-## Validação e evidências
+In planning, write: "No product implementation in this phase". In execution, record only work actually finished and the changed files.
 
-Comando/cenário, ambiente não sensível, resultado, link ou screenshot. Se ainda não executado, escreva “Não executado”.
+## Validation and evidence
 
-## Pendências e riscos
+Command/scenario, non-sensitive environment, result, link or screenshot. If not run yet, write "Not run".
 
-## Fontes
+## Open items and risks
 
-URLs diretas e data de acesso; vazio quando não houve pesquisa externa.
+## Sources
+
+Direct URLs and access date; empty when there was no external research.

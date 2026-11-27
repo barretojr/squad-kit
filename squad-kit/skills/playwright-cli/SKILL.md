@@ -27,8 +27,8 @@ This skill includes:
 ### 1. Browser Inspection & Screenshots (MCP or CLI)
 ```bash
 # Via MCP tool:
-run_playwright_cli(command="screenshot", url="http://localhost:5173", viewport="desktop", output_path=".squad/evidencias/frontend/desktop.png")
-run_playwright_cli(command="screenshot", url="http://localhost:5173", viewport="mobile", output_path=".squad/evidencias/frontend/mobile.png")
+run_playwright_cli(command="screenshot", url="http://localhost:5173", viewport="desktop", output_path=".squad/evidence/frontend/desktop.png")
+run_playwright_cli(command="screenshot", url="http://localhost:5173", viewport="mobile", output_path=".squad/evidence/frontend/mobile.png")
 ```
 
 ### 2. Interactive CLI Commands
@@ -39,9 +39,9 @@ node playwright-cli.js snapshot
 
 # Viewport tests
 node playwright-cli.js resize 1440 900
-node playwright-cli.js screenshot --filename=.squad/evidencias/frontend/desktop.png
+node playwright-cli.js screenshot --filename=.squad/evidence/frontend/desktop.png
 node playwright-cli.js resize 390 844
-node playwright-cli.js screenshot --filename=.squad/evidencias/frontend/mobile.png
+node playwright-cli.js screenshot --filename=.squad/evidence/frontend/mobile.png
 
 # Console & Network requests inspection
 node playwright-cli.js console
@@ -53,5 +53,5 @@ node playwright-cli.js close
 
 ## Security & Evidence Rules
 - **No Credentials in State Files:** Never commit `.auth/` storage states or user passwords to git.
-- **Evidence Path:** Store browser screenshots and snapshots under `.squad/evidencias/frontend/`.
+- **Evidence Path:** Store browser screenshots and snapshots under `.squad/evidence/frontend/`.
 - **Verify Real Backend:** Inspect `requests` to confirm real HTTP requests and 2xx responses; never mock first-party API responses for visual acceptance evidence.
